@@ -34,7 +34,7 @@ public class UserControllerTest {
     @Test
     void findAll() {
         final User user = User.builder()
-                .id(1l)
+                .id(1L)
                 .email("Test1@tt.ru")
                 .login("TestLogin")
                 .name("Test name")
