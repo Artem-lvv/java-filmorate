@@ -1,166 +1,222 @@
 package ru.yandex.practicum.filmorate.Controller;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validation;
-import jakarta.validation.ValidationException;
-import jakarta.validation.Validator;
-import org.hibernate.validator.internal.engine.ConstraintViolationImpl;
-import org.hibernate.validator.internal.engine.path.PathImpl;
-import org.junit.jupiter.api.BeforeEach;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import ru.yandex.practicum.filmorate.controller.UserController;
-import ru.yandex.practicum.filmorate.model.user.User;
 import ru.yandex.practicum.filmorate.model.user.dto.CreateUserDto;
 import ru.yandex.practicum.filmorate.model.user.dto.UpdateUserDto;
-import ru.yandex.practicum.filmorate.model.user.dto.UserDto;
-import ru.yandex.practicum.filmorate.service.MappingDto;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-public class UserControllerTest {
-    Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
-    UserController userController;
+@WebMvcTest(UserController.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+class UserControllerTest {
+    private static final String ENDPOINT_PATH = "/users";
+    @Autowired
+    MockMvc mvc;
+    @Autowired
+    ObjectMapper objectMapper;
 
-    @BeforeEach
-    void beforeEach() {
-        userController = new UserController();
+    @Test
+    void should_return_all_users() throws Exception {
+        mvc.perform(get(ENDPOINT_PATH))
+                .andDo(print())
+                .andExpect(status().isOk());
     }
 
     @Test
-    void findAll() {
-        final User user = User.builder()
-                .id(1L)
-                .email("Test1@tt.ru")
-                .login("TestLogin")
-                .name("Test name")
-                .birthday(LocalDate.of(2000, 1, 1))
-                .build();
-
-        final User twoUser = User.builder()
-                .id(2L)
-                .email("Test2@tt.ru")
-                .login("TestLogin2")
-                .name("Test name 2")
-                .birthday(LocalDate.of(2010, 1, 1))
-                .build();
-
-        userController.getEmailToUser().put(user.getEmail(), user);
-        userController.getEmailToUser().put(twoUser.getEmail(), twoUser);
-
-        Collection<UserDto> all = userController.findAll();
-
-        assertEquals(2, all.size(), "findAll");
-    }
-
-    @Test
-    void createOk() {
+    void create_Ok() throws Exception {
+        LocalDate birthday = LocalDate.now().minusYears(20);
         final CreateUserDto createUserDto = new CreateUserDto(1L,
-                "Test1@tt.ru",
-                "TestName",
-                "Test description",
-                LocalDate.of(2010, 1, 1));
-
-        List<ConstraintViolation<CreateUserDto>> violations = new ArrayList<>(validator.validate(createUserDto));
-
-        assertTrue(violations.isEmpty(), "create");
-    }
-
-    @Test
-    void incorrectFieldsCreate() {
-        final CreateUserDto incorrectFieldsUserDto = new CreateUserDto(1L,
-                "@ttt.ru", //
-                "Test login", // contains a space
+                "ttt@aa.ru",
+                "TestLogin",
                 "Test name",
-                LocalDate.now().plusYears(10)); // future date
+                birthday);
 
-        final CreateUserDto twoUser = new CreateUserDto(2L,
-                "two@tt.ru",
-                "TestTwo",
-                "Test name two",
-                LocalDate.now().minusYears(10));
-
-        final CreateUserDto duplicateFieldEmailTwoUser = new CreateUserDto(3L,
-                "two@tt.ru",
-                "TestThree",
-                "Test name three",
-                LocalDate.now().minusYears(15));
-
-        userController.getEmailToUser().put(twoUser.getEmail(), MappingDto.mapCreateUserDtoToUser(twoUser));
-
-        List<ConstraintViolation<CreateUserDto>> violations = new ArrayList<>(validator.validate(incorrectFieldsUserDto));
-
-        List<String> listNameFields = violations.stream()
-                .map(violation -> (((ConstraintViolationImpl) violation).getPropertyPath()))
-                .map(pathImpl -> ((PathImpl) pathImpl).getLeafNode().getName())
-                .toList();
-
-        assertAll("incorrectFieldsCreate",
-                () -> assertEquals(3, violations.size()),
-                () -> assertTrue(listNameFields.contains("email")),
-                () -> assertTrue(listNameFields.contains("login")),
-                () -> assertTrue(listNameFields.contains("birthday")),
-                () -> assertThrows(ValidationException.class,
-                        () -> userController.create(duplicateFieldEmailTwoUser))); // duplicate email
+        createUser(createUserDto)
+                .andDo(print())
+                .andExpect(status().isCreated())
+                .andExpectAll(
+                        jsonPath("$.id").value(1),
+                        jsonPath("$.email").value("ttt@aa.ru"),
+                        jsonPath("$.login").value("TestLogin"),
+                        jsonPath("$.name").value("Test name"),
+                        jsonPath("$.birthday").value(birthday.toString())
+                );
     }
 
     @Test
-    void updateOk() {
+    void create_BadRequest_incorrect_Fields() throws Exception {
+        LocalDate birthdayFuture = LocalDate.now().plusYears(20);
+        final CreateUserDto createUserDto = new CreateUserDto(1L,
+                "@@@ttt.aaru",
+                "Test  Login",
+                "Test name",
+                birthdayFuture);
+
+
+        createUser(createUserDto)
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+    }
+
+    private ResultActions createUser(CreateUserDto createUser) throws Exception {
+        return mvc.perform(post(ENDPOINT_PATH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createUser)));
+    }
+
+    @Test
+    void create_Conflict_Duplicate_Email() throws Exception {
+        LocalDate birthday = LocalDate.now().minusYears(20);
+        final CreateUserDto createUserDto = new CreateUserDto(1L,
+                "ttt@aa.ru",
+                "TestLogin",
+                "Test name",
+                birthday);
+
+        createUser(createUserDto);
+
+        final CreateUserDto createUserDtoDuplicateEmail = new CreateUserDto(1L,
+                "ttt@aa.ru",
+                "TestLoginDuplicate",
+                "Test name duplicate",
+                birthday);
+
+        createUser(createUserDtoDuplicateEmail)
+                .andDo(print())
+                .andExpect(status().isConflict()); // duplicate name
+    }
+
+    @Test
+    void update_Ok() throws Exception {
+        LocalDate birthday = LocalDate.now().minusYears(20);
+        final CreateUserDto createUserDto = new CreateUserDto(1L,
+                "ttt@aa.ru",
+                "TestLogin",
+                "Test name",
+                birthday);
+
+        createUser(createUserDto);
+
+        LocalDate updateBirthday = birthday.minusYears(10);
         final UpdateUserDto updateUserDto = new UpdateUserDto(1L,
-                "Test1@tt.ru",
-                "TestName",
-                "Test description",
-                LocalDate.of(2010, 1, 1));
+                "Update@aa.ru",
+                "TestLoginUpdate",
+                "Test name update",
+                updateBirthday);
 
-        userController.getEmailToUser().put(updateUserDto.getEmail(), MappingDto.mapUpdateUserDtoToUser(updateUserDto));
+        updateUser(updateUserDto)
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.id").value(1),
+                        jsonPath("$.email").value("Update@aa.ru"),
+                        jsonPath("$.login").value("TestLoginUpdate"),
+                        jsonPath("$.name").value("Test name update"),
+                        jsonPath("$.birthday").value(updateBirthday.toString()));
+    }
 
-        List<ConstraintViolation<UpdateUserDto>> violations = new ArrayList<>(validator.validate(updateUserDto));
 
-        assertTrue(violations.isEmpty(), "update");
+    private ResultActions updateUser(UpdateUserDto updateUserDto) throws Exception {
+        return mvc.perform(put(ENDPOINT_PATH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateUserDto)));
     }
 
     @Test
-    void incorrectFieldsUpdate() {
-        final UpdateUserDto incorrectFieldsUserDto = new UpdateUserDto(-1L,
-                "@ttt.ru", //
-                "Test login", // contains a space
+    void update_NotFound_By_id() throws Exception {
+        LocalDate birthday = LocalDate.now().minusYears(20);
+        final CreateUserDto createUserDto = new CreateUserDto(1L,
+                "ttt@aa.ru",
+                "TestLogin",
                 "Test name",
-                LocalDate.now().plusYears(10)); // future date
+                birthday);
 
-        final UpdateUserDto twoUser = new UpdateUserDto(2L,
-                "two@tt.ru",
-                "TestTwo",
-                "Test name two",
-                LocalDate.now().minusYears(10));
+        createUser(createUserDto);
 
-        final UpdateUserDto duplicateFieldEmailTwoUser = new UpdateUserDto(3L,
-                "two@tt.ru",
-                "TestThree",
-                "Test name three",
-                LocalDate.now().minusYears(15));
+        LocalDate updateBirthday = birthday.minusYears(10);
+        final UpdateUserDto updateUserDto = new UpdateUserDto(Long.MAX_VALUE,
+                "Update@aa.ru",
+                "TestLoginUpdate",
+                "Test name update",
+                updateBirthday);
 
-        userController.getEmailToUser().put(twoUser.getEmail(), MappingDto.mapUpdateUserDtoToUser(twoUser));
-
-        List<ConstraintViolation<UpdateUserDto>> violations = new ArrayList<>(validator.validate(incorrectFieldsUserDto));
-
-        List<String> listNameFields = violations.stream()
-                .map(violation -> (((ConstraintViolationImpl) violation).getPropertyPath()))
-                .map(pathImpl -> ((PathImpl) pathImpl).getLeafNode().getName())
-                .toList();
-
-        assertAll("incorrectFieldsUpdate",
-                () -> assertEquals(4, violations.size()),
-                () -> assertTrue(listNameFields.contains("id")),
-                () -> assertTrue(listNameFields.contains("login")),
-                () -> assertTrue(listNameFields.contains("birthday")),
-                () -> assertTrue(listNameFields.contains("email")),
-                () -> assertThrows(ValidationException.class,
-                        () -> userController.update(incorrectFieldsUserDto)), // not found by id
-                () -> assertThrows(ValidationException.class,
-                        () -> userController.update(duplicateFieldEmailTwoUser))); // duplicate name
+        updateUser(updateUserDto)
+                .andDo(print())
+                .andExpect(status().isNotFound());
     }
+
+    @Test
+    void update_Conflict_Duplicate_Field_Email() throws Exception {
+        LocalDate birthday = LocalDate.now().minusYears(20);
+        final CreateUserDto createUserDto = new CreateUserDto(1L,
+                "ttt@aa.ru",
+                "TestLogin",
+                "Test name",
+                birthday);
+
+        createUser(createUserDto);
+
+        final CreateUserDto twoCreateUserDto = new CreateUserDto(2L,
+                "two@aa.ru",
+                "TestLoginTwo",
+                "Test name two",
+                birthday);
+
+        createUser(twoCreateUserDto);
+
+        final UpdateUserDto updateUserDtoDuplicateEmail = new UpdateUserDto(1L,
+                "two@aa.ru",
+                "TestLoginDuplicate",
+                "Test name duplicate",
+                birthday);
+
+        updateUser(updateUserDtoDuplicateEmail)
+                .andDo(print())
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void update_Conflict_Duplicate_Field_Login() throws Exception {
+        LocalDate birthday = LocalDate.now().minusYears(20);
+        final CreateUserDto createUserDto = new CreateUserDto(1L,
+                "ttt@aa.ru",
+                "TestLogin",
+                "Test name",
+                birthday);
+
+        createUser(createUserDto);
+
+        final CreateUserDto twoCreateUserDto = new CreateUserDto(2L,
+                "two@aa.ru",
+                "TestLoginTwo",
+                "Test name two",
+                birthday);
+
+        createUser(twoCreateUserDto);
+
+        final UpdateUserDto updateUserDtoDuplicateLogin = new UpdateUserDto(1L,
+                "ttt@aa.ru",
+                "TestLoginTwo",
+                "Test name duplicate",
+                birthday);
+
+        updateUser(updateUserDtoDuplicateLogin)
+                .andDo(print())
+                .andExpect(status().isConflict());
+
+    }
+
 }

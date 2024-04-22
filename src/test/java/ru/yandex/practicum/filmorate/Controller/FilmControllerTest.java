@@ -1,82 +1,77 @@
 package ru.yandex.practicum.filmorate.Controller;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validation;
-import jakarta.validation.ValidationException;
-import jakarta.validation.Validator;
-import org.hibernate.validator.internal.engine.ConstraintViolationImpl;
-import org.hibernate.validator.internal.engine.path.PathImpl;
-import org.junit.jupiter.api.BeforeEach;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import ru.yandex.practicum.filmorate.controller.FilmController;
-import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.model.film.dto.CreateFilmDto;
-import ru.yandex.practicum.filmorate.model.film.dto.FilmDto;
 import ru.yandex.practicum.filmorate.model.film.dto.UpdateFilmDto;
-import ru.yandex.practicum.filmorate.service.MappingDto;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-public class FilmControllerTest {
-    Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
-    FilmController filmController;
+@WebMvcTest(FilmController.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+class FilmControllerTest {
+    private static final String ENDPOINT_PATH = "/films";
+    @Autowired
+    MockMvc mvc;
+    @Autowired
+    ObjectMapper objectMapper;
 
-    @BeforeEach
-    void beforeEach() {
-       filmController = new FilmController();
+    @Test
+    void should_return_all_films() throws Exception {
+        mvc.perform(get(ENDPOINT_PATH))
+                .andDo(print())
+                .andExpect(status().isOk());
     }
 
     @Test
-    void findAll() {
-        final Film film = Film.builder()
-                .id(1L)
-                .name("Test name")
-                .description("Test description")
-                .releaseDate(LocalDate.now())
-                .duration(60)
-                .build();
-        final Film twoFilm = Film.builder()
-                .id(2L)
-                .name("Test name 2")
-                .description("Test description 2")
-                .releaseDate(LocalDate.now())
-                .duration(100)
-                .build();
-
-        filmController.getIdToFilm().put(film.getId(), film);
-        filmController.getIdToFilm().put(twoFilm.getId(), twoFilm);
-
-        Collection<FilmDto> all = filmController.findAll();
-
-        assertEquals(2, all.size(), "findAll");
-    }
-
-    @Test
-    void createOk() {
+    void create_Ok() throws Exception {
+        LocalDate now = LocalDate.now();
         final CreateFilmDto createFilmDto = new CreateFilmDto(1L,
-                "Test name",
-                "Test description",
-                LocalDate.now(),
+                "Test name create ok",
+                "Test description create ok",
+                now,
                 60);
 
-        List<ConstraintViolation<CreateFilmDto>> violations = new ArrayList<>(validator.validate(createFilmDto));
-
-        assertTrue(violations.isEmpty(), "create");
+       createFilm(createFilmDto)
+                .andDo(print())
+                .andExpect(status().isCreated())
+                .andExpectAll(
+                        jsonPath("$.id").value(1),
+                        jsonPath("$.name").value("Test name create ok"),
+                        jsonPath("$.description").value("Test description create ok"),
+                        jsonPath("$.releaseDate").value(now.toString()),
+                        jsonPath("$.duration").value(60)
+                );
     }
 
     @Test
-    void incorrectFieldsCreate() {
+    void create_BadRequest_incorrect_Fields() throws Exception {
         final CreateFilmDto incorrectFieldsFilmDto = new CreateFilmDto(1L,
                 "",
                 "Test description".repeat(50), // description > 200 chars
                 LocalDate.of(1895, 12, 27),
                 -2);
 
+
+        createFilm(incorrectFieldsFilmDto)
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void create_Conflict_Duplicate_Name() throws Exception {
         final CreateFilmDto twoCreateFilmDto = new CreateFilmDto(2L,
                 "Test two",
                 "Test description",
@@ -89,89 +84,107 @@ public class FilmControllerTest {
                 LocalDate.of(2000, 12, 1),
                 120);
 
-        filmController.getIdToFilm().put(twoCreateFilmDto.getId(), MappingDto.mapCreateFilmDtoToFilm(twoCreateFilmDto));
+        createFilm(twoCreateFilmDto);
 
-        List<ConstraintViolation<CreateFilmDto>> violations = new ArrayList<>(validator.validate(incorrectFieldsFilmDto));
-
-        List<String> listNameFields = violations.stream()
-                .map(violation -> (((ConstraintViolationImpl) violation).getPropertyPath()))
-                .map(pathImpl -> ((PathImpl) pathImpl).getLeafNode().getName())
-                .toList();
-
-        assertAll("incorrectFieldsCreate",
-                () -> assertEquals(4, violations.size()),
-                () -> assertTrue(listNameFields.contains("name")),
-                () -> assertTrue(listNameFields.contains("description")),
-                () -> assertTrue(listNameFields.contains("releaseDate")),
-                () -> assertTrue(listNameFields.contains("duration")),
-                () -> assertThrows(ValidationException.class,
-                        () -> filmController.create(duplicateNameTwoCreateFilmDto))); // duplicate name
+        createFilm(duplicateNameTwoCreateFilmDto)
+                .andDo(print())
+                .andExpect(status().isConflict()); // duplicate name
     }
 
+    private ResultActions createFilm(CreateFilmDto createFilm) throws Exception {
+        return mvc.perform(post(ENDPOINT_PATH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createFilm)));
+    }
+
+
     @Test
-    void updateOk() {
+    void update_Ok() throws Exception {
+        LocalDate now = LocalDate.now();
+        final CreateFilmDto createFilmDto = new CreateFilmDto(1L,
+                "Test name create ok",
+                "Test description create ok",
+                now,
+                60);
+
+        createFilm(createFilmDto);
+
+        LocalDate newReleaseDate = LocalDate.of(2000, 1, 12);
+
         final UpdateFilmDto updateFilmDto = new UpdateFilmDto(1L,
                 "Test new name",
                 "Test new description",
-                LocalDate.now(),
+                newReleaseDate,
                 120);
 
-        filmController.getIdToFilm().put(updateFilmDto.getId(), MappingDto.mapUpdateFilmDtoToFilm(updateFilmDto));
+        updateFilm(updateFilmDto)
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.id").value(1),
+                        jsonPath("$.name").value("Test new name"),
+                        jsonPath("$.description").value("Test new description"),
+                        jsonPath("$.releaseDate").value(newReleaseDate.toString()),
+                        jsonPath("$.duration").value(120));
+    }
 
-        List<ConstraintViolation<UpdateFilmDto>> violations = new ArrayList<>(validator.validate(updateFilmDto));
-
-        assertTrue(violations.isEmpty(), "update");
+    private ResultActions updateFilm(UpdateFilmDto updateFilmDto) throws Exception {
+        return mvc.perform(put(ENDPOINT_PATH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateFilmDto)));
     }
 
     @Test
-    void incorrectFieldsUpdate() {
-        final UpdateFilmDto incorrectFieldsFilmDto = new UpdateFilmDto(-1L,
-                "",
-                "Test new description".repeat(50), // description > 200 chars
-                LocalDate.of(1895, 12, 27),
-                -2);
+    void update_NotFound_By_id() throws Exception {
+        LocalDate now = LocalDate.now();
+        final CreateFilmDto createFilmDto = new CreateFilmDto(1L,
+                "Test name create ok",
+                "Test description create ok",
+                now,
+                60);
 
-        final UpdateFilmDto filmDtoOk = new UpdateFilmDto(10L,
-                "Test name ok",
-                "Test new description ok",
-                LocalDate.of(2000, 12, 27),
+        createFilm(createFilmDto);
+
+        LocalDate newReleaseDate = LocalDate.of(2000, 1, 12);
+        final UpdateFilmDto updateFilmDto = new UpdateFilmDto(Long.MAX_VALUE, // no id
+                "Test new name",
+                "Test new description",
+                newReleaseDate,
+                120);
+
+        updateFilm(updateFilmDto)
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void update_Conflict_Duplicate_Field_Name() throws Exception {
+        LocalDate now = LocalDate.now();
+        final CreateFilmDto createFilmDto = new CreateFilmDto(1L,
+                "Test name create ok",
+                "Test description create ok",
+                now,
+                60);
+
+        createFilm(createFilmDto);
+
+        final CreateFilmDto twoCreateFilmDto = new CreateFilmDto(2L,
+                "Test name create ok two",
+                "Test description create ok two",
+                now,
                 100);
 
-       filmController.getIdToFilm().put(filmDtoOk.getId(),
-                MappingDto.mapUpdateFilmDtoToFilm(filmDtoOk));
+        createFilm(twoCreateFilmDto);
 
-        final UpdateFilmDto newFilmDtoOk = new UpdateFilmDto(11L,
-                "Test name ok new",
-                "Test new description ok new",
-                LocalDate.of(2001, 12, 27),
-                100);
+        LocalDate newReleaseDate = LocalDate.of(2000, 1, 12);
+        final UpdateFilmDto updateFilmDtoDuplicateName = new UpdateFilmDto(1L, // no id
+                "Test name create ok two",
+                "Test new description duplicate name",
+                newReleaseDate,
+                200);
 
-        final UpdateFilmDto duplicateNewNameFilmDtoOk = new UpdateFilmDto(11L,
-                "Test name ok",
-                "Test new description ok",
-                LocalDate.of(2001, 12, 27),
-                100);
-
-        filmController.getIdToFilm().put(newFilmDtoOk.getId(),
-                MappingDto.mapUpdateFilmDtoToFilm(newFilmDtoOk));
-
-        List<ConstraintViolation<UpdateFilmDto>> violations = new ArrayList<>(validator.validate(incorrectFieldsFilmDto));
-
-        List<String> listNameFields = violations.stream()
-                .map(violation -> (((ConstraintViolationImpl) violation).getPropertyPath()))
-                .map(pathImpl -> ((PathImpl) pathImpl).getLeafNode().getName())
-                .toList();
-
-        assertAll("incorrectFieldsUpdate",
-                () -> assertEquals(5, violations.size()),
-                () -> assertTrue(listNameFields.contains("id")),
-                () -> assertTrue(listNameFields.contains("name")),
-                () -> assertTrue(listNameFields.contains("description")),
-                () -> assertTrue(listNameFields.contains("releaseDate")),
-                () -> assertTrue(listNameFields.contains("duration")),
-                () -> assertThrows(ValidationException.class,
-                        () -> filmController.update(incorrectFieldsFilmDto)), // not found by id
-                () -> assertThrows(ValidationException.class,
-                        () -> filmController.update(duplicateNewNameFilmDtoOk))); // duplicate name
+        updateFilm(updateFilmDtoDuplicateName)
+                .andDo(print())
+                .andExpect(status().isConflict());
     }
 }

@@ -8,9 +8,10 @@ import java.time.LocalDate;
 
 @Data
 @Builder
-@EqualsAndHashCode(exclude = {"email"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class User {
     private Long id;
+    @EqualsAndHashCode.Include
     private String email;
     private String login;
     private String name;
