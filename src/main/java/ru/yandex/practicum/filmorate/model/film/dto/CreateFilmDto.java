@@ -1,0 +1,16 @@
+package ru.yandex.practicum.filmorate.model.film.dto;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import ru.yandex.practicum.filmorate.annotation.MinDate;
+
+import java.time.LocalDate;
+
+public record CreateFilmDto(
+        Long id,
+        @NotBlank(message = "Value must be not empty or null") String name,
+        @Size(max = 200, message = "Value size must not exceed 200 characters") String description,
+        @MinDate LocalDate releaseDate,
+        @Min(value = 1, message = "Value must be positive") Integer duration) {
+}
