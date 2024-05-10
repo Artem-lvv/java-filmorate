@@ -6,7 +6,7 @@ import ru.yandex.practicum.filmorate.model.user.User;
 import ru.yandex.practicum.filmorate.model.user.dto.UserDto;
 
 @Component
-public class UserDtoToUserConverter implements Converter<User, UserDto> {
+public class UserToUserDtoConverter implements Converter<User, UserDto> {
     @Override
     public UserDto convert(User src) {
         return UserDto.builder()
@@ -15,6 +15,7 @@ public class UserDtoToUserConverter implements Converter<User, UserDto> {
                 .login(src.getLogin())
                 .name(src.getName())
                 .birthday(src.getBirthday())
+                .friends(src.getFriends() != null ? src.getFriends().size() : 0)
                 .build();
     }
 }

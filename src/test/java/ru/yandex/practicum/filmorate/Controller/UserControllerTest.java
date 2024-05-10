@@ -6,11 +6,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import ru.yandex.practicum.filmorate.controller.UserController;
+import ru.yandex.practicum.filmorate.converter.user.CreateUserDtoToUserConverter;
+import ru.yandex.practicum.filmorate.converter.user.UpdateUserDtoToUserConverter;
+import ru.yandex.practicum.filmorate.converter.user.UserToUserDtoConverter;
 import ru.yandex.practicum.filmorate.model.user.dto.CreateUserDto;
 import ru.yandex.practicum.filmorate.model.user.dto.UpdateUserDto;
+import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
+import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import java.time.LocalDate;
 
@@ -20,6 +28,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
+@ContextConfiguration(classes = {FilmService.class,
+        InMemoryFilmStorage.class,
+        UserService.class,
+        InMemoryUserStorage.class,
+        UserController.class,
+        CreateUserDtoToUserConverter.class,
+        UserToUserDtoConverter.class,
+        UpdateUserDtoToUserConverter.class
+})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class UserControllerTest {
     private static final String ENDPOINT_PATH = "/users";
@@ -27,6 +44,10 @@ class UserControllerTest {
     MockMvc mvc;
     @Autowired
     ObjectMapper objectMapper;
+    @Autowired
+    InMemoryUserStorage inMemoryUserStorage;
+    @Autowired
+    UserService userService;
 
     @Test
     void should_return_all_users() throws Exception {
@@ -216,7 +237,210 @@ class UserControllerTest {
         updateUser(updateUserDtoDuplicateLogin)
                 .andDo(print())
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    void addFriend_ok() throws Exception {
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        String pathAddFriend = ENDPOINT_PATH + "/%s/friends/%s".formatted(objectsForTest.createUserDto().id().toString(),
+                objectsForTest.twoCreateUserDto().id().toString());
+
+        mvc.perform(put(pathAddFriend))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    private ObjForTest createAndGetObjForTest() {
+        LocalDate birthday = LocalDate.now().minusYears(20);
+        final CreateUserDto createUserDto = new CreateUserDto(1L,
+                "ttt@aa.ru",
+                "TestLogin",
+                "Test name",
+                birthday);
+
+        inMemoryUserStorage.create(createUserDto);
+
+        final CreateUserDto twoCreateUserDto = new CreateUserDto(2L,
+                "two@aa.ru",
+                "TestLoginTwo",
+                "Test name two",
+                birthday);
+
+        inMemoryUserStorage.create(twoCreateUserDto);
+
+        final CreateUserDto threeCreateUserDto = new CreateUserDto(3L,
+                "three@aa.ru",
+                "TestLoginThree",
+                "Test name three",
+                birthday);
+
+        inMemoryUserStorage.create(threeCreateUserDto);
+        ObjForTest objects = new ObjForTest(createUserDto, twoCreateUserDto, threeCreateUserDto);
+        return objects;
+    }
+
+    private record ObjForTest(CreateUserDto createUserDto,
+                              CreateUserDto twoCreateUserDto,
+                              CreateUserDto threeCreateUserDto) {
+    }
+
+    @Test
+    void addFriend_NotFound_User() throws Exception {
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
+
+        String notFoundIdUser = "99";
+
+        String pathAddFriend = ENDPOINT_PATH + "/%s/friends/%s".formatted(notFoundIdUser,
+                objectsForTest.twoCreateUserDto.id().toString());
+
+        mvc.perform(put(pathAddFriend))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void addFriend_NotFound_Friend() throws Exception {
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
+
+        String notFoundIdFriend = "99";
+
+        String pathAddFriend = ENDPOINT_PATH + "/%s/friends/%s"
+                .formatted(objectsForTest.createUserDto.id().toString(), notFoundIdFriend);
+
+        mvc.perform(put(pathAddFriend))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void findAllFriendsUser_ok() throws Exception {
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
+
+        String pathFindAllFriends = ENDPOINT_PATH + "/%s/friends"
+                .formatted(objectsForTest.createUserDto.id().toString());
+
+        mvc.perform(get(pathFindAllFriends))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void findAllFriendsUser_NotFound_User() throws Exception {
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
+
+        String notFoundIdFriend = "99";
+
+        String pathFindAllFriends = ENDPOINT_PATH + "/%s/friends"
+                .formatted(notFoundIdFriend);
+
+        mvc.perform(get(pathFindAllFriends))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteFriendUser_ok() throws Exception {
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
+
+        String pathDeleteFriend = ENDPOINT_PATH + "/%s/friends/%s"
+                .formatted(objectsForTest.createUserDto.id().toString(), objectsForTest.twoCreateUserDto.id());
+
+        mvc.perform(delete(pathDeleteFriend))
+                .andDo(print())
+                .andExpect(status().isOk());
 
     }
 
+    @Test
+    void deleteFriendUser_NotFound_User() throws Exception {
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
+
+        String notFoundIdUser = "99";
+
+        String pathDeleteFriend = ENDPOINT_PATH + "/%s/friends/%s"
+                .formatted(notFoundIdUser, objectsForTest.twoCreateUserDto.id());
+
+        mvc.perform(delete(pathDeleteFriend))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteFriendUser_NotFound_Friend() throws Exception {
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
+
+        String notFoundIdFriend = "99";
+
+        String pathDeleteFriend = ENDPOINT_PATH + "/%s/friends/%s"
+                .formatted(objectsForTest.createUserDto.id().toString(), notFoundIdFriend);
+
+        mvc.perform(delete(pathDeleteFriend))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getCommonFriendsUser_ok() throws Exception {
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
+        userService.addFriend(objectsForTest.twoCreateUserDto.id(), objectsForTest.threeCreateUserDto.id());
+
+        String pathCommonFriends = ENDPOINT_PATH + "/%s/friends/common/%s"
+                .formatted(objectsForTest.createUserDto.id().toString(),
+                        objectsForTest.threeCreateUserDto.id().toString());
+
+        mvc.perform(get(pathCommonFriends))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void getCommonFriendsUser_NotFound_User() throws Exception {
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
+        userService.addFriend(objectsForTest.twoCreateUserDto.id(), objectsForTest.threeCreateUserDto.id());
+
+        String notFoundIdUser = "99";
+
+        String pathCommonFriends = ENDPOINT_PATH + "/%s/friends/common/%s"
+                .formatted(notFoundIdUser, objectsForTest.threeCreateUserDto.id().toString());
+
+        mvc.perform(get(pathCommonFriends))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getCommonFriendsUser_NotFound_OtherUser() throws Exception {
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
+        userService.addFriend(objectsForTest.twoCreateUserDto.id(), objectsForTest.threeCreateUserDto.id());
+
+        String notFoundIdOtherUser = "99";
+
+        String pathCommonFriends = ENDPOINT_PATH + "/%s/friends/common/%s"
+                .formatted(objectsForTest.createUserDto.id(), notFoundIdOtherUser);
+
+        mvc.perform(get(pathCommonFriends))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
 }
