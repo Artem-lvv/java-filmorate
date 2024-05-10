@@ -15,7 +15,7 @@ public class FilmToFilmDtoConverter implements Converter<Film, FilmDto> {
                 .description(src.getDescription())
                 .releaseDate(src.getReleaseDate())
                 .duration(src.getDuration())
-                .likes(src.getLikes() != null ? src.getLikes().size() : 0)
+                .likes(src.getLikes().size())
                 .build();
     }
 }

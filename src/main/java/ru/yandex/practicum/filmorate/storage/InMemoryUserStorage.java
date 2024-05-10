@@ -78,6 +78,8 @@ public class InMemoryUserStorage implements UserStorage {
         }
 
         User finalUser = cs.convert(updateUserDto, User.class);
+        finalUser.setFriends(oldUser.get().getFriends()); // save friends
+
         emailToUser.put(finalUser.getEmail(), finalUser);
 
         log.info("Update: oldObj {} -> newObj {}", oldUser, finalUser);

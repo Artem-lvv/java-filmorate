@@ -67,6 +67,8 @@ public class InMemoryFilmStorage implements FilmStorage {
         }
 
         Film finalFilm = cs.convert(updateFilmDto, Film.class);
+        finalFilm.setLikes(oldFilm.getLikes()); // safe likes
+
         idToFilm.put(finalFilm.getId(), finalFilm);
         log.info("Update: oldObj {} -> newObj {}", oldFilm, updateFilmDto);
 
