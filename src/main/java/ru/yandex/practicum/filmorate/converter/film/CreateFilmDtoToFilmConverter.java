@@ -5,6 +5,8 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.model.film.dto.CreateFilmDto;
 
+import java.util.HashSet;
+
 @Component
 public class CreateFilmDtoToFilmConverter implements Converter<CreateFilmDto, Film> {
     @Override
@@ -15,6 +17,7 @@ public class CreateFilmDtoToFilmConverter implements Converter<CreateFilmDto, Fi
                 .description(src.description())
                 .releaseDate(src.releaseDate())
                 .duration(src.duration())
+                .likes(new HashSet<>())
                 .build();
     }
 }

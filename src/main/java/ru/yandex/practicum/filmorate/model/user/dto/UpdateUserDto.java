@@ -8,9 +8,15 @@ import ru.yandex.practicum.filmorate.annotation.DoesNotContainSubstring;
 
 import java.time.LocalDate;
 
-
-public record UpdateUserDto(@Min(value = 0, message = "Value must be positive") Long id,
-        @NotBlank(message = "Value cannot be empty or null") @Email(message = "Value must contains character @") String email,
-        @DoesNotContainSubstring(value = " ", message = "Value must not contain spaces") @NotBlank(message = "Value cannot be empty or null") String login,
-        String name, @Past LocalDate birthday) {
+public record UpdateUserDto(
+        @Min(value = 0, message = "Value must be positive")
+        Long id,
+        @NotBlank(message = "Value cannot be empty or null")
+        @Email(message = "Value must contains character @")
+        String email,
+        @DoesNotContainSubstring(value = " ", message = "Value must not contain spaces")
+        @NotBlank(message = "Value cannot be empty or null")
+        String login,
+        String name,
+        @Past LocalDate birthday) {
 }

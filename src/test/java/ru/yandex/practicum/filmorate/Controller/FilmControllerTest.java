@@ -6,11 +6,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import ru.yandex.practicum.filmorate.controller.FilmController;
+import ru.yandex.practicum.filmorate.converter.film.CreateFilmDtoToFilmConverter;
+import ru.yandex.practicum.filmorate.converter.film.FilmToFilmDtoConverter;
+import ru.yandex.practicum.filmorate.converter.film.UpdateFilmDtoToFilmConverter;
+import ru.yandex.practicum.filmorate.converter.user.CreateUserDtoToUserConverter;
+import ru.yandex.practicum.filmorate.converter.user.UserToUserDtoConverter;
 import ru.yandex.practicum.filmorate.model.film.dto.CreateFilmDto;
+import ru.yandex.practicum.filmorate.model.film.dto.FilmDto;
 import ru.yandex.practicum.filmorate.model.film.dto.UpdateFilmDto;
+import ru.yandex.practicum.filmorate.model.user.dto.CreateUserDto;
+import ru.yandex.practicum.filmorate.model.user.dto.UserDto;
+import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
+import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import java.time.LocalDate;
 
@@ -20,13 +33,30 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(FilmController.class)
+@ContextConfiguration(classes = {FilmService.class,
+        InMemoryFilmStorage.class,
+        UserService.class,
+        InMemoryUserStorage.class,
+        FilmController.class,
+        CreateFilmDtoToFilmConverter.class,
+        FilmToFilmDtoConverter.class,
+        UpdateFilmDtoToFilmConverter.class,
+        UserToUserDtoConverter.class,
+        CreateUserDtoToUserConverter.class
+})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class FilmControllerTest {
     private static final String ENDPOINT_PATH = "/films";
     @Autowired
-    MockMvc mvc;
+    private MockMvc mvc;
     @Autowired
-    ObjectMapper objectMapper;
+    private ObjectMapper objectMapper;
+    @Autowired
+    private InMemoryUserStorage inMemoryUserStorage;
+    @Autowired
+    private InMemoryFilmStorage inMemoryFilmStorage;
+    @Autowired
+    private FilmService filmService;
 
     @Test
     void should_return_all_films() throws Exception {
@@ -44,7 +74,7 @@ class FilmControllerTest {
                 now,
                 60);
 
-       createFilm(createFilmDto)
+        createFilm(createFilmDto)
                 .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpectAll(
@@ -187,4 +217,130 @@ class FilmControllerTest {
                 .andDo(print())
                 .andExpect(status().isConflict());
     }
+
+    @Test
+    void addLikeFilm_ok() throws Exception {
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        String pathAddLike = ENDPOINT_PATH + "/%s/like/%s"
+                .formatted(objectsForTest.filmDto().id().toString(), objectsForTest.userDto().id().toString());
+
+        mvc.perform(put(pathAddLike))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+    }
+
+    private ObjForTest createAndGetObjForTest() {
+        LocalDate now = LocalDate.now();
+        final CreateFilmDto createFilmDto = new CreateFilmDto(1L,
+                "Test name create ok",
+                "Test description create ok",
+                now,
+                60);
+
+        FilmDto filmDto = inMemoryFilmStorage.create(createFilmDto);
+
+        LocalDate birthday = LocalDate.now().minusYears(20);
+        final CreateUserDto createUserDto = new CreateUserDto(1L,
+                "ttt@aa.ru",
+                "TestLogin",
+                "Test name",
+                birthday);
+
+        UserDto userDto = inMemoryUserStorage.create(createUserDto);
+        ObjForTest objects = new ObjForTest(filmDto, userDto);
+        return objects;
+    }
+
+    private record ObjForTest(FilmDto filmDto, UserDto userDto) {
+    }
+
+    @Test
+    void addLikeFilm_NotFound_Film() throws Exception {
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        String notFoundIdFilm = "99";
+
+        String pathAddLike = ENDPOINT_PATH + "/%s/like/%s"
+                .formatted(notFoundIdFilm, objectsForTest.userDto.id().toString());
+
+        mvc.perform(put(pathAddLike))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+
+    }
+
+    @Test
+    void addLikeFilm_NotFound_User() throws Exception {
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        String notFoundIdUser = "99";
+
+        String pathAddLike = ENDPOINT_PATH + "/%s/like/%s"
+                .formatted(objectsForTest.filmDto.id().toString(), notFoundIdUser);
+
+        mvc.perform(put(pathAddLike))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteLikeFilm_ok() throws Exception {
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        filmService.addLikeFilm(objectsForTest.filmDto.id(), objectsForTest.userDto.id());
+
+        String pathAddLike = ENDPOINT_PATH + "/%s/like/%s"
+                .formatted(objectsForTest.filmDto.id().toString(), objectsForTest.userDto.id().toString());
+
+        mvc.perform(delete(pathAddLike))
+                .andDo(print())
+                .andExpect(status().isOk());
+
+    }
+
+    @Test
+    void deleteLikeFilm_NotFound_Film() throws Exception {
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        filmService.addLikeFilm(objectsForTest.filmDto.id(), objectsForTest.userDto.id());
+
+        String notFoundIdFilm = "99";
+
+        String pathAddLike = ENDPOINT_PATH + "/%s/like/%s"
+                .formatted(notFoundIdFilm, objectsForTest.userDto.id().toString());
+
+        mvc.perform(delete(pathAddLike))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+
+    }
+
+    @Test
+    void deleteLikeFilm_NotFound_User() throws Exception {
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        String notFoundIdUser = "99";
+
+        String pathAddLike = ENDPOINT_PATH + "/%s/like/%s"
+                .formatted(objectsForTest.filmDto.id(), notFoundIdUser);
+
+        mvc.perform(delete(pathAddLike))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void findPopularFilms() throws Exception {
+        String count = "12";
+        String pathFindPopularFilms = ENDPOINT_PATH + "/popular?count=%s".formatted(count);
+
+        ObjForTest objectsForTest = createAndGetObjForTest();
+
+        mvc.perform(get(pathFindPopularFilms))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+
 }

@@ -8,10 +8,14 @@ import ru.yandex.practicum.filmorate.annotation.MinDate;
 import java.time.LocalDate;
 
 public record UpdateFilmDto(
-        @Min(value = 0, message = "Value must be positive") Long id,
-        @NotBlank(message = "Value must be not empty or null") String name,
-        @Size(max = 200, message = "Value size must not exceed 200 characters") String description,
+        @Min(value = 0, message = "Value must be positive")
+        Long id,
+        @NotBlank(message = "Value must be not empty or null")
+        String name,
+        @Size(max = 200, message = "Value size must not exceed 200 characters")
+        String description,
         @MinDate LocalDate releaseDate,
-        @Min(value = 1, message = "Value must be positive") Integer duration
+        @Min(value = 1, message = "Value must be positive")
+        Integer duration
 ) {
 }
