@@ -23,7 +23,7 @@ import java.util.*;
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
-public class UserService implements UserStorage{
+public class UserService implements UserStorage {
     @Qualifier("mvcConversionService")
     private final ConversionService cs;
     private final UserRepository userRepository;
