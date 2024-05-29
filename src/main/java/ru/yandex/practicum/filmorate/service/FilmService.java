@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class FilmService implements FilmStorage {
     @Qualifier("mvcConversionService")
@@ -41,7 +40,6 @@ public class FilmService implements FilmStorage {
     private final UserRepository userRepository;
 
     @Override
-    @Transactional
     public FilmDto create(CreateFilmDto createFilmDto) {
         Film finalFilm = cs.convert(createFilmDto, Film.class);
 
@@ -87,7 +85,6 @@ public class FilmService implements FilmStorage {
     }
 
     @Override
-    @Transactional
     public FilmDto update(UpdateFilmDto updateFilmDto) {
         Optional<Film> filmById = findById(updateFilmDto.id());
 
