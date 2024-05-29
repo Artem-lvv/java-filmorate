@@ -1,49 +1,78 @@
-package ru.yandex.practicum.filmorate.Controller;
+package ru.yandex.practicum.filmorate.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
-import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.converter.film.CreateFilmDtoToFilmConverter;
 import ru.yandex.practicum.filmorate.converter.film.FilmToFilmDtoConverter;
 import ru.yandex.practicum.filmorate.converter.film.UpdateFilmDtoToFilmConverter;
 import ru.yandex.practicum.filmorate.converter.user.CreateUserDtoToUserConverter;
 import ru.yandex.practicum.filmorate.converter.user.UserToUserDtoConverter;
-import ru.yandex.practicum.filmorate.model.film.dto.CreateFilmDto;
-import ru.yandex.practicum.filmorate.model.film.dto.FilmDto;
-import ru.yandex.practicum.filmorate.model.film.dto.UpdateFilmDto;
+import ru.yandex.practicum.filmorate.model.film.dto.*;
 import ru.yandex.practicum.filmorate.model.user.dto.CreateUserDto;
 import ru.yandex.practicum.filmorate.model.user.dto.UserDto;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.service.UserService;
-import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
-import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
+import ru.yandex.practicum.filmorate.storage.inDataBase.FilmDBStorage;
+import ru.yandex.practicum.filmorate.storage.inDataBase.GenreDBStorage;
+import ru.yandex.practicum.filmorate.storage.inDataBase.MPADBStorage;
+import ru.yandex.practicum.filmorate.storage.inDataBase.UserDBStorage;
+import ru.yandex.practicum.filmorate.storage.inDataBase.dao.FilmRepository;
+import ru.yandex.practicum.filmorate.storage.inDataBase.dao.UserRepository;
+import ru.yandex.practicum.filmorate.storage.inDataBase.dao.mapper.FilmRowMapper;
+import ru.yandex.practicum.filmorate.storage.inDataBase.dao.mapper.GenreRowMapper;
+import ru.yandex.practicum.filmorate.storage.inDataBase.dao.mapper.MotionPictureAssociationRowMapper;
+import ru.yandex.practicum.filmorate.storage.inDataBase.dao.mapper.UserRowMapper;
 
+import javax.sql.DataSource;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@JdbcTest
+@AutoConfigureTestDatabase
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
+
 @WebMvcTest(FilmController.class)
 @ContextConfiguration(classes = {FilmService.class,
-        InMemoryFilmStorage.class,
+        FilmDBStorage.class,
         UserService.class,
-        InMemoryUserStorage.class,
+        UserDBStorage.class,
         FilmController.class,
         CreateFilmDtoToFilmConverter.class,
         FilmToFilmDtoConverter.class,
         UpdateFilmDtoToFilmConverter.class,
         UserToUserDtoConverter.class,
-        CreateUserDtoToUserConverter.class
+        CreateUserDtoToUserConverter.class,
+        FilmService.class,
+        UserService.class,
+        FilmRepository.class,
+        UserRepository.class,
+        FilmRowMapper.class,
+        GenreRowMapper.class,
+        MotionPictureAssociationRowMapper.class,
+        UserRowMapper.class,
+        GenreDBStorage.class,
+        MPADBStorage.class,
+        JdbcTemplate.class,
+        DataSource.class
 })
+
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class FilmControllerTest {
     private static final String ENDPOINT_PATH = "/films";
@@ -52,11 +81,13 @@ class FilmControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
     @Autowired
-    private InMemoryUserStorage inMemoryUserStorage;
+    private UserDBStorage userDBStorage;
     @Autowired
-    private InMemoryFilmStorage inMemoryFilmStorage;
+    private FilmDBStorage filmDBStorage;
     @Autowired
     private FilmService filmService;
+    @Autowired
+    private DataSource dataSource;
 
     @Test
     void should_return_all_films() throws Exception {
@@ -68,11 +99,17 @@ class FilmControllerTest {
     @Test
     void create_Ok() throws Exception {
         LocalDate now = LocalDate.now();
+        Set<GenreIdDto> genreIdDtos = new HashSet<>();
+        genreIdDtos.add(GenreIdDto.builder().id(1L).build());
+        MPAIdDto mpaIdDto = MPAIdDto.builder().id(1L).build();
+
         final CreateFilmDto createFilmDto = new CreateFilmDto(1L,
                 "Test name create ok",
                 "Test description create ok",
                 now,
-                60);
+                60,
+                genreIdDtos,
+                mpaIdDto);
 
         createFilm(createFilmDto)
                 .andDo(print())
@@ -88,11 +125,17 @@ class FilmControllerTest {
 
     @Test
     void create_BadRequest_incorrect_Fields() throws Exception {
+        Set<GenreIdDto> genreIdDtos = new HashSet<>();
+        genreIdDtos.add(GenreIdDto.builder().id(1L).build());
+        MPAIdDto mpaIdDto = MPAIdDto.builder().id(1L).build();
+
         final CreateFilmDto incorrectFieldsFilmDto = new CreateFilmDto(1L,
                 "",
                 "Test description".repeat(50), // description > 200 chars
                 LocalDate.of(1895, 12, 27),
-                -2);
+                -2,
+                genreIdDtos,
+                mpaIdDto);
 
 
         createFilm(incorrectFieldsFilmDto)
@@ -102,17 +145,25 @@ class FilmControllerTest {
 
     @Test
     void create_Conflict_Duplicate_Name() throws Exception {
+        Set<GenreIdDto> genreIdDtos = new HashSet<>();
+        genreIdDtos.add(GenreIdDto.builder().id(1L).build());
+        MPAIdDto mpaIdDto = MPAIdDto.builder().id(1L).build();
+
         final CreateFilmDto twoCreateFilmDto = new CreateFilmDto(2L,
                 "Test two",
                 "Test description",
                 LocalDate.of(1999, 12, 1),
-                100);
+                100,
+                genreIdDtos,
+                mpaIdDto);
 
         final CreateFilmDto duplicateNameTwoCreateFilmDto = new CreateFilmDto(3L,
                 "Test two",
                 "Test description",
                 LocalDate.of(2000, 12, 1),
-                120);
+                120,
+                genreIdDtos,
+                mpaIdDto);
 
         createFilm(twoCreateFilmDto);
 
@@ -130,12 +181,18 @@ class FilmControllerTest {
 
     @Test
     void update_Ok() throws Exception {
+        Set<GenreIdDto> genreIdDtos = new HashSet<>();
+        genreIdDtos.add(GenreIdDto.builder().id(1L).build());
+        MPAIdDto mpaIdDto = MPAIdDto.builder().id(1L).build();
         LocalDate now = LocalDate.now();
+
         final CreateFilmDto createFilmDto = new CreateFilmDto(1L,
                 "Test name create ok",
                 "Test description create ok",
                 now,
-                60);
+                60,
+                genreIdDtos,
+                mpaIdDto);
 
         createFilm(createFilmDto);
 
@@ -145,7 +202,9 @@ class FilmControllerTest {
                 "Test new name",
                 "Test new description",
                 newReleaseDate,
-                120);
+                120,
+                genreIdDtos,
+                mpaIdDto);
 
         updateFilm(updateFilmDto)
                 .andDo(print())
@@ -166,12 +225,18 @@ class FilmControllerTest {
 
     @Test
     void update_NotFound_By_id() throws Exception {
+        Set<GenreIdDto> genreIdDtos = new HashSet<>();
+        genreIdDtos.add(GenreIdDto.builder().id(1L).build());
+        MPAIdDto mpaIdDto = MPAIdDto.builder().id(1L).build();
         LocalDate now = LocalDate.now();
+
         final CreateFilmDto createFilmDto = new CreateFilmDto(1L,
                 "Test name create ok",
                 "Test description create ok",
                 now,
-                60);
+                60,
+                genreIdDtos,
+                mpaIdDto);
 
         createFilm(createFilmDto);
 
@@ -180,7 +245,9 @@ class FilmControllerTest {
                 "Test new name",
                 "Test new description",
                 newReleaseDate,
-                120);
+                120,
+                genreIdDtos,
+                mpaIdDto);
 
         updateFilm(updateFilmDto)
                 .andDo(print())
@@ -189,12 +256,18 @@ class FilmControllerTest {
 
     @Test
     void update_Conflict_Duplicate_Field_Name() throws Exception {
+        Set<GenreIdDto> genreIdDtos = new HashSet<>();
+        genreIdDtos.add(GenreIdDto.builder().id(1L).build());
+        MPAIdDto mpaIdDto = MPAIdDto.builder().id(1L).build();
         LocalDate now = LocalDate.now();
+
         final CreateFilmDto createFilmDto = new CreateFilmDto(1L,
                 "Test name create ok",
                 "Test description create ok",
                 now,
-                60);
+                60,
+                genreIdDtos,
+                mpaIdDto);
 
         createFilm(createFilmDto);
 
@@ -202,7 +275,9 @@ class FilmControllerTest {
                 "Test name create ok two",
                 "Test description create ok two",
                 now,
-                100);
+                100,
+                genreIdDtos,
+                mpaIdDto);
 
         createFilm(twoCreateFilmDto);
 
@@ -211,7 +286,9 @@ class FilmControllerTest {
                 "Test name create ok two",
                 "Test new description duplicate name",
                 newReleaseDate,
-                200);
+                200,
+                genreIdDtos,
+                mpaIdDto);
 
         updateFilm(updateFilmDtoDuplicateName)
                 .andDo(print())
@@ -232,14 +309,20 @@ class FilmControllerTest {
     }
 
     private ObjForTest createAndGetObjForTest() {
+        Set<GenreIdDto> genreIdDtos = new HashSet<>();
+        genreIdDtos.add(GenreIdDto.builder().id(1L).build());
+        MPAIdDto mpaIdDto = MPAIdDto.builder().id(1L).build();
         LocalDate now = LocalDate.now();
+
         final CreateFilmDto createFilmDto = new CreateFilmDto(1L,
                 "Test name create ok",
                 "Test description create ok",
                 now,
-                60);
+                60,
+                genreIdDtos,
+                mpaIdDto);
 
-        FilmDto filmDto = inMemoryFilmStorage.create(createFilmDto);
+        FilmDto filmDto = filmDBStorage.create(createFilmDto);
 
         LocalDate birthday = LocalDate.now().minusYears(20);
         final CreateUserDto createUserDto = new CreateUserDto(1L,
@@ -248,7 +331,7 @@ class FilmControllerTest {
                 "Test name",
                 birthday);
 
-        UserDto userDto = inMemoryUserStorage.create(createUserDto);
+        UserDto userDto = userDBStorage.create(createUserDto);
         ObjForTest objects = new ObjForTest(filmDto, userDto);
         return objects;
     }

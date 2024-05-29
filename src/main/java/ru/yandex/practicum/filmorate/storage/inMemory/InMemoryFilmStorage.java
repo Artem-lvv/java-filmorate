@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.storage;
+package ru.yandex.practicum.filmorate.storage.inMemory;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,9 +11,12 @@ import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.model.film.dto.CreateFilmDto;
 import ru.yandex.practicum.filmorate.model.film.dto.FilmDto;
 import ru.yandex.practicum.filmorate.model.film.dto.UpdateFilmDto;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
 import java.util.*;
 
+
+@Deprecated
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -103,6 +106,11 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .limit(count)
                 .map(film -> cs.convert(film, FilmDto.class))
                 .toList();
+    }
+
+    @Override
+    public FilmDto findByIdFilmWithGenreAndMpa(Long genreId) {
+        return null;
     }
 
     private long getNextId() {

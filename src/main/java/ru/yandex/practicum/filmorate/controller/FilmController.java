@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.film.dto.CreateFilmDto;
@@ -16,12 +17,14 @@ import java.util.*;
 @RequiredArgsConstructor
 @RequestMapping("/films")
 public class FilmController {
+    @Qualifier("filmDBStorage")
     private final FilmStorage filmStorage;
+
     private final FilmService filmService;
 
     @GetMapping
     public Collection<FilmDto> findAll() {
-        return filmStorage.findAll();
+        return filmService.findAll();
     }
 
     @PostMapping
@@ -48,7 +51,13 @@ public class FilmController {
     }
 
    @GetMapping("/popular")
-    public Collection<FilmDto> findPopularFilms(@RequestParam(defaultValue = "10") Long count) {
+    public List<FilmDto> findPopularFilms(@RequestParam(defaultValue = "10") Long count) {
         return filmStorage.findPopularFilms(count);
     }
+
+    @GetMapping("/{id}")
+    public FilmDto findById(@PathVariable Long id) {
+        return filmStorage.findByIdFilmWithGenreAndMpa(id);
+    }
+
 }

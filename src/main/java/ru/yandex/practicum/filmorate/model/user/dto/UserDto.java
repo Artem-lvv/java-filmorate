@@ -10,7 +10,6 @@ public record UserDto(
         String email,
         String login,
         String name,
-        LocalDate birthday,
-        Integer friends
+        LocalDate birthday
 ) {
 }

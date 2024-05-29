@@ -17,7 +17,6 @@ public class CreateUserDtoToUserConverter implements Converter<CreateUserDto, Us
                 .login(src.login())
                 .name(src.name())
                 .birthday(src.birthday())
-                .friends(new HashSet<>())
                 .build();
     }
 }

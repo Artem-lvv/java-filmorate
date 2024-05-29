@@ -15,7 +15,6 @@ public class UserToUserDtoConverter implements Converter<User, UserDto> {
                 .login(src.getLogin())
                 .name(src.getName())
                 .birthday(src.getBirthday())
-                .friends(src.getFriends().size())
                 .build();
     }
 }

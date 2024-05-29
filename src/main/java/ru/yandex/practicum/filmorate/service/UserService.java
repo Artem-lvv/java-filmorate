@@ -8,6 +8,8 @@ import ru.yandex.practicum.filmorate.exception.EntityNotFoundByIdException;
 import ru.yandex.practicum.filmorate.model.user.User;
 import ru.yandex.practicum.filmorate.model.user.dto.UserDto;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
+import ru.yandex.practicum.filmorate.storage.inDataBase.dao.UserRepository;
+
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -17,67 +19,48 @@ import java.util.stream.Collectors;
 public class UserService {
     @Qualifier("mvcConversionService")
     private final ConversionService cs;
+    @Qualifier("userDBStorage")
     private final UserStorage userStorage;
 
-    public void addFriend(Long id, Long friendId) {
-        Map<Long, User> idToUser = checkAndGetUsersById(List.of(id, friendId));
+    private final UserRepository userRepository;
 
-        idToUser.get(id).getFriends().add(friendId);
-        idToUser.get(friendId).getFriends().add(id);
+    public void addFriend(Long userId, Long friendId) {
+        checkUserById(userId);
+        checkUserById(friendId);
+
+        userRepository.addFriend(userId, friendId);
     }
 
-    public List<UserDto> findAllFriendsUser(Long id) {
-        Optional<User> user = userStorage.findById(id);
+    public List<UserDto> findAllFriendsUser(Long userId) {
+        checkUserById(userId);
+        List<User> allFriendsUser = userRepository.findAllFriendsUser(userId);
 
-        if (user.isEmpty()) {
-            throw new EntityNotFoundByIdException("User", id.toString());
+        return allFriendsUser
+                .stream()
+                .map(user -> cs.convert(user, UserDto.class))
+                .toList();
+    }
+
+    public void deleteFriendUser(Long userId, Long friendId) {
+        checkUserById(userId);
+        checkUserById(friendId);
+
+        userRepository.deleteFriendUser(userId, friendId);
+    }
+
+    public List<UserDto> getCommonFriendsUser(Long userId, Long otherId) {
+        List<User> commonFriendsUser = userRepository.getCommonFriendsUser(userId, otherId);
+
+        return commonFriendsUser
+                .stream()
+                .map(user -> cs.convert(user, UserDto.class))
+                .toList();
+    }
+
+    public void checkUserById(Long userId) {
+        Optional<User> userById = userRepository.findById(userId);
+        if (userById.isEmpty()) {
+            throw new EntityNotFoundByIdException("user", userId.toString());
         }
-
-        return user.get().getFriends()
-                .stream()
-                .map(userStorage::findById)
-                .filter(Optional::isPresent)
-                .map(streamUser -> cs.convert(streamUser.get(), UserDto.class))
-                .sorted(Comparator.comparing(userDto -> userDto != null ? userDto.id() : null))
-                .toList();
-    }
-
-    public void deleteFriendUser(Long id, Long friendId) {
-        Map<Long, User> idToUser = checkAndGetUsersById(List.of(id, friendId));
-
-        idToUser.get(id).getFriends().remove(friendId);
-        idToUser.get(friendId).getFriends().remove(id);
-    }
-
-    public List<UserDto> getCommonFriendsUser(Long id, Long otherId) {
-        Map<Long, User> idToUser = checkAndGetUsersById(List.of(id, otherId));
-        User user = idToUser.get(id);
-        User otherUser = idToUser.get(otherId);
-
-        return user.getFriends()
-                .stream()
-                .filter(idFriend -> otherUser.getFriends().contains(idFriend))
-                .map(idCommonFriend -> {
-                    Optional<User> commonFriend = userStorage.findById(idCommonFriend);
-                    if (commonFriend.isEmpty()) {
-                        throw new EntityNotFoundByIdException("User", idCommonFriend.toString());
-                    }
-                    return commonFriend.get();
-                })
-                .map(streamUser -> cs.convert(streamUser, UserDto.class))
-                .sorted(Comparator.comparing(userDto -> userDto != null ? userDto.id() : null))
-                .toList();
-    }
-
-    public Map<Long, User> checkAndGetUsersById(List<Long> listId) {
-        return listId.stream()
-                .map(userId -> {
-                    Optional<User> user = userStorage.findById(userId);
-                    if (user.isEmpty()) {
-                        throw new EntityNotFoundByIdException("User", userId.toString());
-                    }
-                    return user.get();
-                })
-                .collect(Collectors.toMap(User::getId, v -> v));
     }
 }

@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.Controller;
+package ru.yandex.practicum.filmorate.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -9,7 +9,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
-import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.converter.user.CreateUserDtoToUserConverter;
 import ru.yandex.practicum.filmorate.converter.user.UpdateUserDtoToUserConverter;
 import ru.yandex.practicum.filmorate.converter.user.UserToUserDtoConverter;
@@ -17,8 +16,8 @@ import ru.yandex.practicum.filmorate.model.user.dto.CreateUserDto;
 import ru.yandex.practicum.filmorate.model.user.dto.UpdateUserDto;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.service.UserService;
-import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
-import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
+import ru.yandex.practicum.filmorate.storage.inMemory.InMemoryFilmStorage;
+import ru.yandex.practicum.filmorate.storage.inMemory.InMemoryUserStorage;
 
 import java.time.LocalDate;
 
