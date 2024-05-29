@@ -1,55 +1,74 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
-import ru.yandex.practicum.filmorate.converter.user.CreateUserDtoToUserConverter;
-import ru.yandex.practicum.filmorate.converter.user.UpdateUserDtoToUserConverter;
-import ru.yandex.practicum.filmorate.converter.user.UserToUserDtoConverter;
+import ru.yandex.practicum.filmorate.exception.EntityDuplicateException;
+import ru.yandex.practicum.filmorate.exception.EntityNotFoundByIdException;
+import ru.yandex.practicum.filmorate.model.user.User;
 import ru.yandex.practicum.filmorate.model.user.dto.CreateUserDto;
 import ru.yandex.practicum.filmorate.model.user.dto.UpdateUserDto;
-import ru.yandex.practicum.filmorate.service.FilmService;
-import ru.yandex.practicum.filmorate.service.UserService;
-import ru.yandex.practicum.filmorate.storage.inMemory.InMemoryFilmStorage;
-import ru.yandex.practicum.filmorate.storage.inMemory.InMemoryUserStorage;
+import ru.yandex.practicum.filmorate.model.user.dto.UserDto;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
-@ContextConfiguration(classes = {FilmService.class,
-        InMemoryFilmStorage.class,
-        UserService.class,
-        InMemoryUserStorage.class,
-        UserController.class,
-        CreateUserDtoToUserConverter.class,
-        UserToUserDtoConverter.class,
-        UpdateUserDtoToUserConverter.class
-})
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@RequiredArgsConstructor
 class UserControllerTest {
     private static final String ENDPOINT_PATH = "/users";
+
     @Autowired
     MockMvc mvc;
+
     @Autowired
     ObjectMapper objectMapper;
-    @Autowired
-    InMemoryUserStorage inMemoryUserStorage;
-    @Autowired
-    UserService userService;
+
+    @MockBean
+    private FilmStorage filmStorage;
+
+    @MockBean(name = "userService")
+    private UserStorage userStorage;
+
+    @Qualifier("mvcConversionService")
+    private final ConversionService cs;
 
     @Test
     void should_return_all_users() throws Exception {
+        List<UserDto> usersList = new ArrayList<>();
+
+        for (int i = 0; i < 4; i++) {
+            usersList.add(UserDto.builder()
+                    .id((long) i)
+                    .name("test name " + i)
+                    .login("testLogin" + i)
+                    .email("testEmail@" + i)
+                    .birthday(LocalDate.now())
+                    .build());
+        }
+
+        when(userStorage.findAll())
+                .thenReturn(usersList);
+
         mvc.perform(get(ENDPOINT_PATH))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -63,6 +82,12 @@ class UserControllerTest {
                 "TestLogin",
                 "Test name",
                 birthday);
+
+        User user = cs.convert(createUserDto, User.class);
+        UserDto userDto = cs.convert(user, UserDto.class);
+
+        when(userStorage.create(createUserDto))
+                .thenReturn(userDto);
 
         createUser(createUserDto)
                 .andDo(print())
@@ -85,6 +110,10 @@ class UserControllerTest {
                 "Test name",
                 birthdayFuture);
 
+        String testId = "99";
+        doThrow(new EntityDuplicateException("user", testId))
+                .when(userStorage)
+                .create(any());
 
         createUser(createUserDto)
                 .andDo(print())
@@ -106,15 +135,12 @@ class UserControllerTest {
                 "Test name",
                 birthday);
 
-        createUser(createUserDto);
+        String testId = "99";
+        doThrow(new EntityDuplicateException("user", testId))
+                .when(userStorage)
+                .create(any());
 
-        final CreateUserDto createUserDtoDuplicateEmail = new CreateUserDto(1L,
-                "ttt@aa.ru",
-                "TestLoginDuplicate",
-                "Test name duplicate",
-                birthday);
-
-        createUser(createUserDtoDuplicateEmail)
+        createUser(createUserDto)
                 .andDo(print())
                 .andExpect(status().isConflict()); // duplicate name
     }
@@ -136,6 +162,12 @@ class UserControllerTest {
                 "TestLoginUpdate",
                 "Test name update",
                 updateBirthday);
+
+        User user = cs.convert(updateUserDto, User.class);
+        UserDto userDto = cs.convert(user, UserDto.class);
+
+        when(userStorage.update(updateUserDto))
+                .thenReturn(userDto);
 
         updateUser(updateUserDto)
                 .andDo(print())
@@ -173,6 +205,11 @@ class UserControllerTest {
                 "Test name update",
                 updateBirthday);
 
+        long notFoundIdUser = 88L;
+        doThrow(new EntityNotFoundByIdException("user", String.valueOf(notFoundIdUser)))
+                .when(userStorage)
+                .update(any());
+
         updateUser(updateUserDto)
                 .andDo(print())
                 .andExpect(status().isNotFound());
@@ -202,6 +239,10 @@ class UserControllerTest {
                 "TestLoginDuplicate",
                 "Test name duplicate",
                 birthday);
+
+        doThrow(new EntityDuplicateException("field name", "email value"))
+                .when(userStorage)
+                .update(any());
 
         updateUser(updateUserDtoDuplicateEmail)
                 .andDo(print())
@@ -233,6 +274,10 @@ class UserControllerTest {
                 "Test name duplicate",
                 birthday);
 
+        doThrow(new EntityDuplicateException("field name", "name value"))
+                .when(userStorage)
+                .update(any());
+
         updateUser(updateUserDtoDuplicateLogin)
                 .andDo(print())
                 .andExpect(status().isConflict());
@@ -258,7 +303,7 @@ class UserControllerTest {
                 "Test name",
                 birthday);
 
-        inMemoryUserStorage.create(createUserDto);
+        userStorage.create(createUserDto);
 
         final CreateUserDto twoCreateUserDto = new CreateUserDto(2L,
                 "two@aa.ru",
@@ -266,7 +311,7 @@ class UserControllerTest {
                 "Test name two",
                 birthday);
 
-        inMemoryUserStorage.create(twoCreateUserDto);
+        userStorage.create(twoCreateUserDto);
 
         final CreateUserDto threeCreateUserDto = new CreateUserDto(3L,
                 "three@aa.ru",
@@ -274,7 +319,7 @@ class UserControllerTest {
                 "Test name three",
                 birthday);
 
-        inMemoryUserStorage.create(threeCreateUserDto);
+        userStorage.create(threeCreateUserDto);
         ObjForTest objects = new ObjForTest(createUserDto, twoCreateUserDto, threeCreateUserDto);
         return objects;
     }
@@ -285,42 +330,10 @@ class UserControllerTest {
     }
 
     @Test
-    void addFriend_NotFound_User() throws Exception {
-        ObjForTest objectsForTest = createAndGetObjForTest();
-
-        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
-
-        String notFoundIdUser = "99";
-
-        String pathAddFriend = ENDPOINT_PATH + "/%s/friends/%s".formatted(notFoundIdUser,
-                objectsForTest.twoCreateUserDto.id().toString());
-
-        mvc.perform(put(pathAddFriend))
-                .andDo(print())
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void addFriend_NotFound_Friend() throws Exception {
-        ObjForTest objectsForTest = createAndGetObjForTest();
-
-        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
-
-        String notFoundIdFriend = "99";
-
-        String pathAddFriend = ENDPOINT_PATH + "/%s/friends/%s"
-                .formatted(objectsForTest.createUserDto.id().toString(), notFoundIdFriend);
-
-        mvc.perform(put(pathAddFriend))
-                .andDo(print())
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
     void findAllFriendsUser_ok() throws Exception {
         ObjForTest objectsForTest = createAndGetObjForTest();
 
-        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
+        userStorage.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
 
         String pathFindAllFriends = ENDPOINT_PATH + "/%s/friends"
                 .formatted(objectsForTest.createUserDto.id().toString());
@@ -332,14 +345,13 @@ class UserControllerTest {
 
     @Test
     void findAllFriendsUser_NotFound_User() throws Exception {
-        ObjForTest objectsForTest = createAndGetObjForTest();
-
-        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
-
-        String notFoundIdFriend = "99";
-
+        long notFoundIdUser = 88L;
         String pathFindAllFriends = ENDPOINT_PATH + "/%s/friends"
-                .formatted(notFoundIdFriend);
+                .formatted(notFoundIdUser);
+
+        doThrow(new EntityNotFoundByIdException("user", String.valueOf(notFoundIdUser)))
+                .when(userStorage)
+                .findAllFriendsUser(notFoundIdUser);
 
         mvc.perform(get(pathFindAllFriends))
                 .andDo(print())
@@ -348,12 +360,10 @@ class UserControllerTest {
 
     @Test
     void deleteFriendUser_ok() throws Exception {
-        ObjForTest objectsForTest = createAndGetObjForTest();
-
-        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
-
+        long idUser = 88L;
+        long idFriend = 99L;
         String pathDeleteFriend = ENDPOINT_PATH + "/%s/friends/%s"
-                .formatted(objectsForTest.createUserDto.id().toString(), objectsForTest.twoCreateUserDto.id());
+                .formatted(idUser, idFriend);
 
         mvc.perform(delete(pathDeleteFriend))
                 .andDo(print())
@@ -363,14 +373,15 @@ class UserControllerTest {
 
     @Test
     void deleteFriendUser_NotFound_User() throws Exception {
-        ObjForTest objectsForTest = createAndGetObjForTest();
-
-        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
-
-        String notFoundIdUser = "99";
+        long notFoundIdUser = 88L;
+        long notFoundIdFriend = 99L;
 
         String pathDeleteFriend = ENDPOINT_PATH + "/%s/friends/%s"
-                .formatted(notFoundIdUser, objectsForTest.twoCreateUserDto.id());
+                .formatted(notFoundIdUser, notFoundIdFriend);
+
+        doThrow(new EntityNotFoundByIdException("user", String.valueOf(notFoundIdUser)))
+                .when(userStorage)
+                .deleteFriendUser(notFoundIdUser, notFoundIdFriend);
 
         mvc.perform(delete(pathDeleteFriend))
                 .andDo(print())
@@ -379,14 +390,15 @@ class UserControllerTest {
 
     @Test
     void deleteFriendUser_NotFound_Friend() throws Exception {
-        ObjForTest objectsForTest = createAndGetObjForTest();
-
-        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
-
-        String notFoundIdFriend = "99";
+        long idUser = 88L;
+        long idFriend = 99L;
 
         String pathDeleteFriend = ENDPOINT_PATH + "/%s/friends/%s"
-                .formatted(objectsForTest.createUserDto.id().toString(), notFoundIdFriend);
+                .formatted(idUser, idFriend);
+
+        doThrow(new EntityNotFoundByIdException("user", String.valueOf(idUser)))
+                .when(userStorage)
+                .deleteFriendUser(idUser, idFriend);
 
         mvc.perform(delete(pathDeleteFriend))
                 .andDo(print())
@@ -395,14 +407,26 @@ class UserControllerTest {
 
     @Test
     void getCommonFriendsUser_ok() throws Exception {
-        ObjForTest objectsForTest = createAndGetObjForTest();
-
-        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
-        userService.addFriend(objectsForTest.twoCreateUserDto.id(), objectsForTest.threeCreateUserDto.id());
+        long idUser = 88L;
+        long idFriend = 99L;
 
         String pathCommonFriends = ENDPOINT_PATH + "/%s/friends/common/%s"
-                .formatted(objectsForTest.createUserDto.id().toString(),
-                        objectsForTest.threeCreateUserDto.id().toString());
+                .formatted(idUser, idFriend);
+
+        List<UserDto> usersList = new ArrayList<>();
+
+        for (int i = 0; i < 4; i++) {
+            usersList.add(UserDto.builder()
+                    .id((long) i)
+                    .name("test name " + i)
+                    .login("testLogin" + i)
+                    .email("testEmail@" + i)
+                    .birthday(LocalDate.now())
+                    .build());
+        }
+
+        when(userStorage.getCommonFriendsUser(idUser, idFriend))
+                .thenReturn(usersList);
 
         mvc.perform(get(pathCommonFriends))
                 .andDo(print())
@@ -411,15 +435,15 @@ class UserControllerTest {
 
     @Test
     void getCommonFriendsUser_NotFound_User() throws Exception {
-        ObjForTest objectsForTest = createAndGetObjForTest();
-
-        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
-        userService.addFriend(objectsForTest.twoCreateUserDto.id(), objectsForTest.threeCreateUserDto.id());
-
-        String notFoundIdUser = "99";
+        long notFoundIdUser = 88L;
+        long notFoundIdFriend = 99L;
 
         String pathCommonFriends = ENDPOINT_PATH + "/%s/friends/common/%s"
-                .formatted(notFoundIdUser, objectsForTest.threeCreateUserDto.id().toString());
+                .formatted(notFoundIdUser, notFoundIdFriend);
+
+        doThrow(new EntityNotFoundByIdException("user", String.valueOf(notFoundIdUser)))
+                .when(userStorage)
+                .getCommonFriendsUser(notFoundIdUser, notFoundIdFriend);
 
         mvc.perform(get(pathCommonFriends))
                 .andDo(print())
@@ -428,15 +452,15 @@ class UserControllerTest {
 
     @Test
     void getCommonFriendsUser_NotFound_OtherUser() throws Exception {
-        ObjForTest objectsForTest = createAndGetObjForTest();
-
-        userService.addFriend(objectsForTest.createUserDto.id(), objectsForTest.twoCreateUserDto.id());
-        userService.addFriend(objectsForTest.twoCreateUserDto.id(), objectsForTest.threeCreateUserDto.id());
-
-        String notFoundIdOtherUser = "99";
+        long notFoundIdUser = 88L;
+        long notFoundIdFriend = 99L;
 
         String pathCommonFriends = ENDPOINT_PATH + "/%s/friends/common/%s"
-                .formatted(objectsForTest.createUserDto.id(), notFoundIdOtherUser);
+                .formatted(notFoundIdUser, notFoundIdFriend);
+
+        doThrow(new EntityNotFoundByIdException("user", String.valueOf(notFoundIdUser)))
+                .when(userStorage)
+                .getCommonFriendsUser(notFoundIdUser, notFoundIdFriend);
 
         mvc.perform(get(pathCommonFriends))
                 .andDo(print())
