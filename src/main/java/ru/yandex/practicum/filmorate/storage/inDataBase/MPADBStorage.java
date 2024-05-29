@@ -31,11 +31,11 @@ public class MPADBStorage {
     }
 
     public MPADto findById(Long id) {
-        Optional<MPA> MPAById = mpaRepository.findById(id);
+        Optional<MPA> mpaById = mpaRepository.findById(id);
 
-        if (MPAById.isEmpty()) {
+        if (mpaById.isEmpty()) {
             throw new EntityNotFoundByIdException("MPA", id.toString());
         }
-        return cs.convert(MPAById.get(), MPADto.class);
+        return cs.convert(mpaById.get(), MPADto.class);
     }
 }
