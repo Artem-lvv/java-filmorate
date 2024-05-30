@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundByIdException;
 import ru.yandex.practicum.filmorate.exception.InternalServerException;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class FilmService implements FilmStorage {
     @Qualifier("mvcConversionService")
@@ -39,6 +41,7 @@ public class FilmService implements FilmStorage {
     private final UserRepository userRepository;
 
     @Override
+    @Transactional
     public FilmDto create(CreateFilmDto createFilmDto) {
         Film finalFilm = cs.convert(createFilmDto, Film.class);
 
@@ -84,6 +87,7 @@ public class FilmService implements FilmStorage {
     }
 
     @Override
+    @Transactional
     public FilmDto update(UpdateFilmDto updateFilmDto) {
         Optional<Film> filmById = findById(updateFilmDto.id());
 
@@ -95,14 +99,6 @@ public class FilmService implements FilmStorage {
         }
 
         Film oldFilm = filmById.get();
-        Optional<Film> foundMovieByName = filmRepository.findByName(updateFilmDto.name());
-
-//        if (!updateFilmDto.name().equals(oldFilm.getName())
-//                && foundMovieByName.isPresent()) {
-//            String message = "A film with the same title already exists " + updateFilmDto.name();
-//            log.warn(message);
-//            throw new EntityDuplicateException("name", updateFilmDto.name());
-//        }
 
         int rowsUpdated = filmRepository.update(updateFilmDto);
 
