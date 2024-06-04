@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import ru.yandex.practicum.filmorate.annotation.MinDate;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 public record UpdateFilmDto(
         @Min(value = 0, message = "Value must be positive")
@@ -16,6 +17,8 @@ public record UpdateFilmDto(
         String description,
         @MinDate LocalDate releaseDate,
         @Min(value = 1, message = "Value must be positive")
-        Integer duration
+        Integer duration,
+        Set<GenreIdDto> genres,
+        MPAIdDto mpa
 ) {
 }

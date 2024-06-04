@@ -1,20 +1,15 @@
-package ru.yandex.practicum.filmorate.model.user;
+package ru.yandex.practicum.filmorate.model.film;
 
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.time.LocalDate;
-
 @Data
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class User {
+public class MPA {
     private Long id;
     @EqualsAndHashCode.Include
-    private String email;
-    private String login;
     private String name;
-    private LocalDate birthday;
-
+    private String description;
 }

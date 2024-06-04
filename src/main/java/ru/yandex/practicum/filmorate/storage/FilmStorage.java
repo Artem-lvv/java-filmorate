@@ -18,4 +18,10 @@ public interface FilmStorage {
     Optional<Film> findById(Long id);
 
     List<FilmDto> findPopularFilms(Long count);
+
+    FilmDto findByIdFilmWithGenreAndMpa(Long genreId);
+
+    void addLikeFilm(Long id, Long userId);
+
+    void deleteLikeFilm(Long id, Long userId);
 }

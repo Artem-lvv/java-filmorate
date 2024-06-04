@@ -5,6 +5,8 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.model.film.dto.FilmDto;
 
+import java.util.ArrayList;
+
 @Component
 public class FilmToFilmDtoConverter implements Converter<Film, FilmDto> {
     @Override
@@ -15,7 +17,8 @@ public class FilmToFilmDtoConverter implements Converter<Film, FilmDto> {
                 .description(src.getDescription())
                 .releaseDate(src.getReleaseDate())
                 .duration(src.getDuration())
-                .likes(src.getLikes().size())
+                .genres(src.getGenres() == null ? null : new ArrayList<>(src.getGenres()))
+                .mpa(src.getMpa())
                 .build();
     }
 }
