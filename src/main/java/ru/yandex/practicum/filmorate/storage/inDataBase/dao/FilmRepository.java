@@ -108,4 +108,26 @@ public class FilmRepository {
         return jdbcTemplate.query(sqlQuery, filmRowMapper);
     }
 
+    public List<Long> findSimilarUsersByLikes(Long userId) {
+        String sql = "SELECT uf1.user_id, COUNT(*) AS common_likes " +
+                "FROM FILM_LIKES AS uf1 " +
+                "JOIN FILM_LIKES AS uf2 ON uf1.film_id = uf2.film_id " +
+                "WHERE uf2.user_id = ? AND uf1.user_id != ? " +
+                "GROUP BY uf1.user_id " +
+                "ORDER BY common_likes DESC";
+
+        return jdbcTemplate.query(sql, new Object[]{userId, userId},
+                (rs, rowNum) -> rs.getLong("user_id"));
+    }
+
+    public List<Film> findRecommendedFilms(Long userId, Long similarUserId) {
+        String sqlQuery = "SELECT * " +
+                "FROM FILM_LIKES AS fl " +
+                "JOIN FILM AS f ON fl.film_id = f.id " +
+                "WHERE user_id = ? " +
+                "AND film_id NOT IN (SELECT film_id FROM FILM_LIKES WHERE user_id = ?)";
+
+        return jdbcTemplate.query(sqlQuery, filmRowMapper, similarUserId, userId);
+    }
+
 }

@@ -7,6 +7,7 @@ import ru.yandex.practicum.filmorate.model.film.dto.UpdateFilmDto;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface FilmStorage {
     FilmDto create(CreateFilmDto createFilmDto);
@@ -24,4 +25,6 @@ public interface FilmStorage {
     void addLikeFilm(Long id, Long userId);
 
     void deleteLikeFilm(Long id, Long userId);
+
+    Set<FilmDto> recommendFilms(Long id);
 }

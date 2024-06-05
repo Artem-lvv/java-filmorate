@@ -23,6 +23,7 @@ import ru.yandex.practicum.filmorate.storage.inDataBase.dao.GenreRepository;
 import ru.yandex.practicum.filmorate.storage.inDataBase.dao.MPARepository;
 import ru.yandex.practicum.filmorate.storage.inDataBase.dao.UserRepository;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -221,4 +222,30 @@ public class FilmService implements FilmStorage {
             throw new EntityNotFoundByIdException("film", id.toString());
         }
     }
+
+    @Override
+    public Set<FilmDto> recommendFilms(Long userId) {
+        userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundByIdException("User", userId.toString()));
+
+        List<Long> similarUserIds = filmRepository.findSimilarUsersByLikes(userId);
+
+        Set<Film> recommendedFilms = new HashSet<>();
+        for (Long similarUserId : similarUserIds) {
+            int maxSize = 10;
+
+            List<Film> films = filmRepository.findRecommendedFilms(userId, similarUserId);
+            recommendedFilms.addAll(films);
+
+            if (recommendedFilms.size() >= maxSize) {
+                break;
+            }
+
+        }
+
+        return recommendedFilms
+                .stream()
+                .map(film -> cs.convert(film, FilmDto.class))
+                .collect(Collectors.toSet());
+    }
+
 }
