@@ -23,9 +23,7 @@ import ru.yandex.practicum.filmorate.storage.inDataBase.dao.GenreRepository;
 import ru.yandex.practicum.filmorate.storage.inDataBase.dao.MPARepository;
 import ru.yandex.practicum.filmorate.storage.inDataBase.dao.UserRepository;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -165,8 +163,40 @@ public class FilmService implements FilmStorage {
     }
 
     @Override
-    public List<FilmDto> findPopularFilms(Long count) {
-        List<Film> popularFilms = filmRepository.findPopularFilms(count);
+    public List<FilmDto> findPopularFilms(Map<String, String> allParams) {
+        Map<String, Long> finalAllParam = allParams.entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> {
+                            try {
+                                return Long.parseLong(entry.getValue());
+                            } catch (NumberFormatException e) {
+                                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                        "Incorrect request parameter [%s] value [%s]"
+                                                .formatted(entry.getKey(), entry.getValue()));
+                            }
+                        }
+                ));
+
+        if (finalAllParam.containsKey("genreId")) {
+            List<Genre> genreById = genreRepository.findById(finalAllParam.get("genreId"));
+            if (genreById.isEmpty()) {
+                throw new EntityNotFoundByIdException("Genre", finalAllParam.get("genreId").toString());
+            }
+        }
+
+        // default value "count" is 10L
+        if (!finalAllParam.containsKey("count")) {
+            long defaultSize = 10L;
+            finalAllParam.put("count", defaultSize);
+        }
+
+        List<Film> popularFilms = filmRepository.findPopularFilmsBySelection(finalAllParam);
+
+        if (popularFilms == null) {
+            return Collections.emptyList();
+        }
 
         return popularFilms
                 .stream()

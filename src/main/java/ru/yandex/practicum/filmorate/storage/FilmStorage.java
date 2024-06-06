@@ -6,6 +6,7 @@ import ru.yandex.practicum.filmorate.model.film.dto.FilmDto;
 import ru.yandex.practicum.filmorate.model.film.dto.UpdateFilmDto;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface FilmStorage {
@@ -17,7 +18,7 @@ public interface FilmStorage {
 
     Optional<Film> findById(Long id);
 
-    List<FilmDto> findPopularFilms(Long count);
+    List<FilmDto> findPopularFilms(Map<String, String> allParams);
 
     FilmDto findByIdFilmWithGenreAndMpa(Long genreId);
 

@@ -12,10 +12,7 @@ import ru.yandex.practicum.filmorate.storage.inDataBase.dao.mapper.FilmRowMapper
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Repository
 @RequiredArgsConstructor
@@ -98,14 +95,37 @@ public class FilmRepository {
         return Optional.ofNullable(films.get(0));
     }
 
-    public List<Film> findPopularFilms(Long count) {
-        final String sqlQuery = "SELECT id, name, description, release_date, duration  FROM FILM AS f\n" +
-                "    INNER JOIN FILM_LIKES AS fl ON f.ID = fl.FILM_ID\n" +
-                "                      GROUP BY id, name, description, release_date, duration\n" +
-                "                      ORDER BY COUNT(FILM_ID) DESC\n" +
-                "LIMIT " + count;
+    public List<Film> findPopularFilmsBySelection(Map<String, Long> allParams) {
+        StringBuilder sqlQuery = new StringBuilder(
+                "SELECT f.id, " +
+                        "f.name, " +
+                        "f.description, " +
+                        "f.release_date, " +
+                        "f.duration, " +
+                        "COUNT(fl.user_id) AS likes_count " +
+                        "FROM film f " +
+                        "JOIN film_likes fl ON f.id = fl.film_id " +
+                        "LEFT JOIN film_genre fg ON f.id = fg.film_id " +
+                        "WHERE 1=1 "
+        );
 
-        return jdbcTemplate.query(sqlQuery, filmRowMapper);
+        List<Object> params = new ArrayList<>();
+
+        if (allParams.containsKey("genreId")) {
+            sqlQuery.append("AND fg.genre_id = ? ");
+            params.add(allParams.get("genreId"));
+        }
+
+        if (allParams.containsKey("year")) {
+            sqlQuery.append("AND EXTRACT(YEAR FROM f.release_date) = ? ");
+            params.add(allParams.get("year"));
+        }
+
+        sqlQuery.append("GROUP BY f.id, f.name, f.description, f.release_date, f.duration " +
+                "ORDER BY likes_count DESC " +
+                "LIMIT ?");
+        params.add(allParams.get("count"));
+
+        return jdbcTemplate.query(sqlQuery.toString(), params.toArray(), filmRowMapper);
     }
-
 }
