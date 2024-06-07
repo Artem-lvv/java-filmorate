@@ -19,6 +19,7 @@ public record UpdateFilmDto(
         @Min(value = 1, message = "Value must be positive")
         Integer duration,
         Set<GenreIdDto> genres,
-        MPAIdDto mpa
+        MPAIdDto mpa,
+        Set<DirectorDto> directors
 ) {
 }

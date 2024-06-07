@@ -56,4 +56,10 @@ public class FilmController {
     public FilmDto findById(@PathVariable Long id) {
         return filmStorage.findByIdFilmWithGenreAndMpa(id);
     }
+
+    @GetMapping("/director/{directorId}")
+    public List<FilmDto> findDirectorFilms(@PathVariable Long directorId, @RequestParam(defaultValue = "") String sortBy) {
+        return filmStorage.findDirectorFilms(directorId, sortBy);
+    }
+
 }

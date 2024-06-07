@@ -130,4 +130,22 @@ public class FilmRepository {
         return jdbcTemplate.query(sqlQuery, filmRowMapper, similarUserId, userId);
     }
 
+    public List<Film> findDirectorFilms(Long directorId, String sortBy) {
+        StringBuilder sqlQuery = new StringBuilder(
+                "SELECT f.id, f.name, f.description, f.release_date, f.duration FROM FILM AS f\n" +
+                        "JOIN FILM_DIRECTOR AS fd ON f.ID = fd.FILM_ID\n" +
+                        "LEFT JOIN (\n" +
+                        "SELECT film_id, count(*) likes_count\n" +
+                        "FROM FILM_LIKES\n" +
+                        "GROUP BY film_id\n" +
+                        ") fl ON fl.film_id = f.ID\n" +
+                        "WHERE fd.DIRECTOR_ID = ?\n");
+        if (sortBy.equals("year")) {
+            sqlQuery.append("ORDER BY f.release_date\n");
+        } else if (sortBy.equals("likes")) {
+            sqlQuery.append("ORDER BY fl.likes_count DESC\n");
+        }
+
+        return jdbcTemplate.query(sqlQuery.toString(), filmRowMapper, directorId);
+    }
 }
