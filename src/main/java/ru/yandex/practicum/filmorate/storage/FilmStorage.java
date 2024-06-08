@@ -28,4 +28,6 @@ public interface FilmStorage {
     void deleteLikeFilm(Long id, Long userId);
 
     Set<FilmDto> recommendFilms(Long id);
+
+    List<FilmDto> findDirectorFilms(Long directorId, String sortBy);
 }
