@@ -11,6 +11,7 @@ import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -48,8 +49,8 @@ public class FilmController {
     }
 
    @GetMapping("/popular")
-    public List<FilmDto> findPopularFilms(@RequestParam(defaultValue = "10") Long count) {
-        return filmStorage.findPopularFilms(count);
+    public List<FilmDto> findPopularFilms(@RequestParam Map<String, String> allParams) {
+        return filmStorage.findPopularFilms(allParams);
     }
 
     @GetMapping("/{id}")
