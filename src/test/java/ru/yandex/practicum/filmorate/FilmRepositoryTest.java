@@ -9,6 +9,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.jdbc.Sql;
 import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.model.film.dto.CreateFilmDto;
+import ru.yandex.practicum.filmorate.model.film.dto.DirectorDto;
 import ru.yandex.practicum.filmorate.model.film.dto.GenreIdDto;
 import ru.yandex.practicum.filmorate.model.film.dto.MPAIdDto;
 import ru.yandex.practicum.filmorate.model.film.dto.UpdateFilmDto;
@@ -72,6 +73,8 @@ class FilmRepositoryTest {
         Set<GenreIdDto> genreIdDtos = new HashSet<>();
         genreIdDtos.add(GenreIdDto.builder().id(1L).build());
         MPAIdDto mpaIdDto = MPAIdDto.builder().id(1L).build();
+        Set<DirectorDto> directorDtos = new HashSet<>();
+        directorDtos.add(DirectorDto.builder().id(1L).name("Director's Name").build());
         LocalDate now = LocalDate.now();
 
         final UpdateFilmDto updateFilmDto = new UpdateFilmDto(id,
@@ -80,7 +83,8 @@ class FilmRepositoryTest {
                 now,
                 60,
                 genreIdDtos,
-                mpaIdDto);
+                mpaIdDto,
+                directorDtos);
 
         Optional<Film> filmUpdate = filmRepository.findById(id);
 
@@ -140,6 +144,8 @@ class FilmRepositoryTest {
         Set<GenreIdDto> genreIdDtos = new HashSet<>();
         genreIdDtos.add(GenreIdDto.builder().id(1L).build());
         MPAIdDto mpaIdDto = MPAIdDto.builder().id(1L).build();
+        Set<DirectorDto> directorDtos = new HashSet<>();
+        directorDtos.add(DirectorDto.builder().id(1L).name("Director's Name").build());
         LocalDate now = LocalDate.now();
 
         final CreateFilmDto createFilmDto = new CreateFilmDto(1L,
@@ -148,12 +154,15 @@ class FilmRepositoryTest {
                 now,
                 60,
                 genreIdDtos,
-                mpaIdDto);
+                mpaIdDto,
+                directorDtos);
 
         Set<GenreIdDto> genreIdDtosTwo = new HashSet<>();
         genreIdDtos.add(GenreIdDto.builder().id(1L).build());
         MPAIdDto mpaIdDtoTwo = MPAIdDto.builder().id(1L).build();
         LocalDate nowTwo = LocalDate.now();
+        Set<DirectorDto> directorDtos2 = new HashSet<>();
+        directorDtos.add(DirectorDto.builder().id(1L).name("Director's Name").build());
 
         final CreateFilmDto createFilmDtoTwo = new CreateFilmDto(2L,
                 "Test name create ok two",
@@ -161,7 +170,8 @@ class FilmRepositoryTest {
                 nowTwo,
                 70,
                 genreIdDtosTwo,
-                mpaIdDtoTwo);
+                mpaIdDtoTwo,
+                directorDtos2);
 
         return new ObjForTest(createFilmDto, createFilmDtoTwo);
     }
