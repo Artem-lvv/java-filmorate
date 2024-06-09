@@ -56,4 +56,10 @@ public class FilmController {
     public FilmDto findById(@PathVariable Long id) {
         return filmStorage.findByIdFilmWithGenreAndMpa(id);
     }
+
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @DeleteMapping("/{filmId}")
+    public void deleteFilm(@PathVariable long filmId) {
+        filmStorage.deleteFilm(filmId);
+    }
 }

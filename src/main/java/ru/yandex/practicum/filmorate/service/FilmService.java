@@ -221,4 +221,8 @@ public class FilmService implements FilmStorage {
             throw new EntityNotFoundByIdException("film", id.toString());
         }
     }
+
+    public void deleteFilm(Long filmId) {
+        filmRepository.deleteFilm(filmId);
+    }
 }

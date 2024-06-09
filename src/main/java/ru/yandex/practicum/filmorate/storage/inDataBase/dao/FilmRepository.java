@@ -108,4 +108,7 @@ public class FilmRepository {
         return jdbcTemplate.query(sqlQuery, filmRowMapper);
     }
 
+    public void deleteFilm(Long filmId) {
+        jdbcTemplate.update("DELETE FROM FILM WHERE id = ?", filmId);
+    }
 }
