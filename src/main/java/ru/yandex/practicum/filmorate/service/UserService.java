@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exception.EntityDuplicateException;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundByIdException;
 import ru.yandex.practicum.filmorate.exception.InternalServerException;
+import ru.yandex.practicum.filmorate.model.feed.Feed;
 import ru.yandex.practicum.filmorate.model.user.User;
 import ru.yandex.practicum.filmorate.model.user.dto.CreateUserDto;
 import ru.yandex.practicum.filmorate.model.user.dto.UpdateUserDto;
@@ -16,8 +17,12 @@ import ru.yandex.practicum.filmorate.model.user.dto.UserDto;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 import ru.yandex.practicum.filmorate.storage.inDataBase.dao.UserRepository;
 
+import java.util.List;
+import java.util.Optional;
 
-import java.util.*;
+import static ru.yandex.practicum.filmorate.model.feed.EventType.FRIEND;
+import static ru.yandex.practicum.filmorate.model.feed.Operation.ADD;
+import static ru.yandex.practicum.filmorate.model.feed.Operation.REMOVE;
 
 @Slf4j
 @Service
@@ -27,6 +32,7 @@ public class UserService implements UserStorage {
     @Qualifier("mvcConversionService")
     private final ConversionService cs;
     private final UserRepository userRepository;
+    private final FeedService feedService;
 
     @Override
     @Transactional
@@ -116,6 +122,12 @@ public class UserService implements UserStorage {
         checkUserById(friendId);
 
         userRepository.addFriend(userId, friendId);
+        feedService.addFeed(Feed.builder()
+                .entityId(friendId)
+                .userId(userId)
+                .eventType(FRIEND)
+                .operation(ADD)
+                .build());
     }
 
     @Override
@@ -135,6 +147,12 @@ public class UserService implements UserStorage {
         checkUserById(friendId);
 
         userRepository.deleteFriendUser(userId, friendId);
+        feedService.addFeed(Feed.builder()
+                .entityId(friendId)
+                .userId(userId)
+                .eventType(FRIEND)
+                .operation(REMOVE)
+                .build());
     }
 
     @Override

@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundByIdException;
 import ru.yandex.practicum.filmorate.exception.InternalServerException;
+import ru.yandex.practicum.filmorate.model.feed.Feed;
 import ru.yandex.practicum.filmorate.model.film.Director;
 import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.model.film.Genre;
@@ -20,19 +21,14 @@ import ru.yandex.practicum.filmorate.model.film.dto.FilmDto;
 import ru.yandex.practicum.filmorate.model.film.dto.UpdateFilmDto;
 import ru.yandex.practicum.filmorate.model.user.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.DirectorRepository;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.FilmRepository;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.GenreRepository;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.MPARepository;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.UserRepository;
+import ru.yandex.practicum.filmorate.storage.inDataBase.dao.*;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static ru.yandex.practicum.filmorate.model.feed.EventType.LIKE;
+import static ru.yandex.practicum.filmorate.model.feed.Operation.ADD;
+import static ru.yandex.practicum.filmorate.model.feed.Operation.REMOVE;
 
 @Slf4j
 @Service
@@ -46,6 +42,7 @@ public class FilmService implements FilmStorage {
     private final FilmRepository filmRepository;
     private final UserRepository userRepository;
     private final DirectorRepository directorRepository;
+    private final FeedService feedService;
 
     @Override
     @Transactional
@@ -255,6 +252,12 @@ public class FilmService implements FilmStorage {
         checkEntityById(id, userId);
 
         filmRepository.addLikeFilm(id, userId);
+        feedService.addFeed(Feed.builder()
+                .entityId(id)
+                .userId(userId)
+                .eventType(LIKE)
+                .operation(ADD)
+                .build());
     }
 
     @Override
@@ -262,6 +265,12 @@ public class FilmService implements FilmStorage {
         checkEntityById(id, userId);
 
         filmRepository.deleteLikeFilm(id, userId);
+        feedService.addFeed(Feed.builder()
+                .entityId(id)
+                .userId(userId)
+                .eventType(LIKE)
+                .operation(REMOVE)
+                .build());
     }
 
     @Override
