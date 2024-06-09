@@ -153,4 +153,8 @@ public class UserService implements UserStorage {
             throw new EntityNotFoundByIdException("user", userId.toString());
         }
     }
+
+    public void deleteUser(Long userId) {
+        userRepository.deleteUser(userId);
+    }
 }

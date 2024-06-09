@@ -55,4 +55,9 @@ public class UserController {
         return userStorage.getCommonFriendsUser(id, otherId);
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @DeleteMapping("/{userId}")
+    public void deleteUser(@PathVariable long userId) {
+        userStorage.deleteUser(userId);
+    }
 }
