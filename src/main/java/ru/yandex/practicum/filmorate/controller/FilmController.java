@@ -11,6 +11,7 @@ import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -48,14 +49,20 @@ public class FilmController {
     }
 
    @GetMapping("/popular")
-    public List<FilmDto> findPopularFilms(@RequestParam(defaultValue = "10") Long count) {
-        return filmStorage.findPopularFilms(count);
+    public List<FilmDto> findPopularFilms(@RequestParam Map<String, String> allParams) {
+        return filmStorage.findPopularFilms(allParams);
     }
 
     @GetMapping("/{id}")
     public FilmDto findById(@PathVariable Long id) {
         return filmStorage.findByIdFilmWithGenreAndMpa(id);
     }
+
+    @GetMapping("/director/{directorId}")
+    public List<FilmDto> findDirectorFilms(@PathVariable Long directorId, @RequestParam(defaultValue = "") String sortBy) {
+        return filmStorage.findDirectorFilms(directorId, sortBy);
+    }
+
 
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{filmId}")

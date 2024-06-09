@@ -12,6 +12,7 @@ import ru.yandex.practicum.filmorate.storage.inDataBase.dao.mapper.FilmRowMapper
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -98,16 +99,79 @@ public class FilmRepository {
         return Optional.ofNullable(films.get(0));
     }
 
-    public List<Film> findPopularFilms(Long count) {
-        final String sqlQuery = "SELECT id, name, description, release_date, duration  FROM FILM AS f\n" +
-                "    INNER JOIN FILM_LIKES AS fl ON f.ID = fl.FILM_ID\n" +
-                "                      GROUP BY id, name, description, release_date, duration\n" +
-                "                      ORDER BY COUNT(FILM_ID) DESC\n" +
-                "LIMIT " + count;
+    public List<Film> findPopularFilmsBySelection(Map<String, Long> allParams) {
+        StringBuilder sqlQuery = new StringBuilder(
+                "SELECT f.id, " +
+                        "f.name, " +
+                        "f.description, " +
+                        "f.release_date, " +
+                        "f.duration, " +
+                        "COUNT(fl.user_id) AS likes_count " +
+                        "FROM film f " +
+                        "JOIN film_likes fl ON f.id = fl.film_id " +
+                        "LEFT JOIN film_genre fg ON f.id = fg.film_id " +
+                        "WHERE 1=1 "
+        );
 
-        return jdbcTemplate.query(sqlQuery, filmRowMapper);
+        List<Object> params = new ArrayList<>();
+
+        if (allParams.containsKey("genreId")) {
+            sqlQuery.append("AND fg.genre_id = ? ");
+            params.add(allParams.get("genreId"));
+        }
+
+        if (allParams.containsKey("year")) {
+            sqlQuery.append("AND EXTRACT(YEAR FROM f.release_date) = ? ");
+            params.add(allParams.get("year"));
+        }
+
+        sqlQuery.append("GROUP BY f.id, f.name, f.description, f.release_date, f.duration " +
+                "ORDER BY likes_count DESC " +
+                "LIMIT ?");
+        params.add(allParams.get("count"));
+
+        return jdbcTemplate.query(sqlQuery.toString(), params.toArray(), filmRowMapper);
+    }
+    public List<Long> findSimilarUsersByLikes(Long userId) {
+        String sql = "SELECT uf1.user_id, COUNT(*) AS common_likes " +
+                "FROM FILM_LIKES AS uf1 " +
+                "JOIN FILM_LIKES AS uf2 ON uf1.film_id = uf2.film_id " +
+                "WHERE uf2.user_id = ? AND uf1.user_id != ? " +
+                "GROUP BY uf1.user_id " +
+                "ORDER BY common_likes DESC";
+
+        return jdbcTemplate.query(sql, new Object[]{userId, userId},
+                (rs, rowNum) -> rs.getLong("user_id"));
     }
 
+    public List<Film> findRecommendedFilms(Long userId, Long similarUserId) {
+        String sqlQuery = "SELECT * " +
+                "FROM FILM_LIKES AS fl " +
+                "JOIN FILM AS f ON fl.film_id = f.id " +
+                "WHERE user_id = ? " +
+                "AND film_id NOT IN (SELECT film_id FROM FILM_LIKES WHERE user_id = ?)";
+
+        return jdbcTemplate.query(sqlQuery, filmRowMapper, similarUserId, userId);
+    }
+
+    public List<Film> findDirectorFilms(Long directorId, String sortBy) {
+        StringBuilder sqlQuery = new StringBuilder(
+                "SELECT f.id, f.name, f.description, f.release_date, f.duration FROM FILM AS f\n" +
+                        "JOIN FILM_DIRECTOR AS fd ON f.ID = fd.FILM_ID\n" +
+                        "LEFT JOIN (\n" +
+                        "SELECT film_id, count(*) likes_count\n" +
+                        "FROM FILM_LIKES\n" +
+                        "GROUP BY film_id\n" +
+                        ") fl ON fl.film_id = f.ID\n" +
+                        "WHERE fd.DIRECTOR_ID = ?\n");
+        if (sortBy.equals("year")) {
+            sqlQuery.append("ORDER BY f.release_date\n");
+        } else if (sortBy.equals("likes")) {
+            sqlQuery.append("ORDER BY fl.likes_count DESC\n");
+        }
+
+        return jdbcTemplate.query(sqlQuery.toString(), filmRowMapper, directorId);
+    }
     public void deleteFilm(Long filmId) {
         jdbcTemplate.update("DELETE FROM FILM WHERE id = ?", filmId);
     }
