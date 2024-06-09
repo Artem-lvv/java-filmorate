@@ -12,11 +12,7 @@ import ru.yandex.practicum.filmorate.storage.inDataBase.dao.mapper.FilmRowMapper
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Repository
 @RequiredArgsConstructor
@@ -132,6 +128,7 @@ public class FilmRepository {
 
         return jdbcTemplate.query(sqlQuery.toString(), params.toArray(), filmRowMapper);
     }
+
     public List<Long> findSimilarUsersByLikes(Long userId) {
         String sql = "SELECT uf1.user_id, COUNT(*) AS common_likes " +
                 "FROM FILM_LIKES AS uf1 " +
@@ -172,6 +169,7 @@ public class FilmRepository {
 
         return jdbcTemplate.query(sqlQuery.toString(), filmRowMapper, directorId);
     }
+
     public void deleteFilm(Long filmId) {
         jdbcTemplate.update("DELETE FROM FILM WHERE id = ?", filmId);
     }
