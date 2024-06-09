@@ -57,7 +57,7 @@ public class UserService implements UserStorage {
     @Override
     @Transactional
     public UserDto update(UpdateUserDto updateUserDto) {
-        Optional<User> oldUser = findById(updateUserDto.id());
+        Optional<User> oldUser = searchUserById(updateUserDto.id());
 
         if (oldUser.isEmpty()) {
             String message = "User not found id " + updateUserDto.id();
@@ -105,9 +105,16 @@ public class UserService implements UserStorage {
                 .toList();
     }
 
-    @Override
-    public Optional<User> findById(Long id) {
+    public Optional<User> searchUserById(Long id) {
         return userRepository.findById(id);
+    }
+
+    @Override
+    public UserDto findById(Long id) {
+        Optional<User> userById = userRepository.findById(id);
+        userById.orElseThrow(() -> new EntityNotFoundByIdException("user", id.toString()));
+
+        return cs.convert(userById.get(), UserDto.class);
     }
 
     @Override

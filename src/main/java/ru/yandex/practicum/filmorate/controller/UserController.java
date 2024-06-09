@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.film.dto.FilmDto;
+import ru.yandex.practicum.filmorate.model.user.User;
 import ru.yandex.practicum.filmorate.model.user.dto.CreateUserDto;
 import ru.yandex.practicum.filmorate.model.user.dto.UpdateUserDto;
 import ru.yandex.practicum.filmorate.model.user.dto.UserDto;
@@ -34,6 +35,11 @@ public class UserController {
     @PutMapping
     public UserDto update(@Valid @RequestBody UpdateUserDto updateUserDto) {
         return userStorage.update(updateUserDto);
+    }
+
+    @GetMapping("/{id}")
+    public UserDto findById(@PathVariable Long id) {
+        return userStorage.findById(id);
     }
 
     @ResponseStatus(HttpStatus.OK)
