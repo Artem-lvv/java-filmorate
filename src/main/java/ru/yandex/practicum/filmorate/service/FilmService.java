@@ -79,6 +79,28 @@ public class FilmService implements FilmStorage {
             finalFilm.setGenres(genreList);
         }
 
+        if (createFilmDto.directors() != null) {
+            List<Director> directorList = createFilmDto.directors()
+                    .stream()
+                    .map(directorIdDto -> {
+                        Optional<Director> director = directorRepository.findById(directorIdDto.id());
+                        if (director.isPresent()) {
+                            return director.get();
+                        }
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                                          "No entity [%s] with id: [%s]".formatted("genre", directorIdDto.id().toString()));
+                    })
+                    .toList();
+
+            directorList
+                    .forEach(director -> {
+                        directorRepository.addFilmDirector(filmId, director.getId());
+                        log.info("add row FILM_DIRECTOR {} to {}", filmId, director.getId());
+                    });
+
+            finalFilm.setDirectors(directorList);
+        }
+
         Optional<MPA> byIdMPA = mpaRepository.findById(createFilmDto.mpa().id());
 
         if (byIdMPA.isEmpty()) {
@@ -272,6 +294,19 @@ public class FilmService implements FilmStorage {
         }
 
         return directorFilms
+                .stream()
+                .map(film -> cs.convert(film, FilmDto.class))
+                .toList();
+    }
+
+    @Override
+    public List<FilmDto> searchFilms(String query, String searchBy) {
+        List<Film> films = filmRepository.searchFilms(query, searchBy);
+        for (Film film : films) {
+            fillFilmFieldsFromOtherTables(film);
+        }
+
+        return films
                 .stream()
                 .map(film -> cs.convert(film, FilmDto.class))
                 .toList();
