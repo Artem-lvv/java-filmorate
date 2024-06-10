@@ -15,5 +15,6 @@ public record CreateFilmDto(
         @MinDate LocalDate releaseDate,
         @Min(value = 1, message = "Value must be positive") Integer duration,
         Set<GenreIdDto> genres,
-        MPAIdDto mpa) {
+        MPAIdDto mpa,
+        Set<DirectorDto> directors) {
 }

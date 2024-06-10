@@ -34,6 +34,13 @@ CREATE TABLE IF NOT EXISTS film
     duration     INTEGER
 );
 
+-- Создаем таблицу director
+CREATE TABLE IF NOT EXISTS director
+(
+    id          SERIAL PRIMARY KEY,
+    name        VARCHAR(255) NOT NULL
+);
+
 -- Создаем таблицу для связи film и likes (многие ко многим)
 CREATE TABLE IF NOT EXISTS film_likes
 (
@@ -73,6 +80,14 @@ CREATE TABLE IF NOT EXISTS friend_requests
     friend_id BIGINT REFERENCES users (id) ON DELETE CASCADE,
     status    VARCHAR(50) NOT NULL,
     PRIMARY KEY (user_id, friend_id)
+);
+
+-- Создаем таблицу для связи film и director (многие ко многим)
+CREATE TABLE IF NOT EXISTS film_director
+(
+    film_id  BIGINT REFERENCES film (id),
+    director_id BIGINT REFERENCES director (id),
+    PRIMARY KEY (film_id, director_id)
 );
 
 CREATE TABLE IF NOT EXISTS reviews(

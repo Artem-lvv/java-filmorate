@@ -19,6 +19,7 @@ public class FilmToFilmDtoConverter implements Converter<Film, FilmDto> {
                 .duration(src.getDuration())
                 .genres(src.getGenres() == null ? null : new ArrayList<>(src.getGenres()))
                 .mpa(src.getMpa())
+                .directors(src.getDirectors() == null ? null : new ArrayList<>(src.getDirectors()))
                 .build();
     }
 }

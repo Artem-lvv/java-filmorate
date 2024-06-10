@@ -10,20 +10,26 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundByIdException;
 import ru.yandex.practicum.filmorate.exception.InternalServerException;
+import ru.yandex.practicum.filmorate.model.film.Director;
 import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.model.film.Genre;
 import ru.yandex.practicum.filmorate.model.film.MPA;
 import ru.yandex.practicum.filmorate.model.film.dto.CreateFilmDto;
+import ru.yandex.practicum.filmorate.model.film.dto.DirectorDto;
 import ru.yandex.practicum.filmorate.model.film.dto.FilmDto;
 import ru.yandex.practicum.filmorate.model.film.dto.UpdateFilmDto;
 import ru.yandex.practicum.filmorate.model.user.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.inDataBase.dao.DirectorRepository;
 import ru.yandex.practicum.filmorate.storage.inDataBase.dao.FilmRepository;
 import ru.yandex.practicum.filmorate.storage.inDataBase.dao.GenreRepository;
 import ru.yandex.practicum.filmorate.storage.inDataBase.dao.MPARepository;
 import ru.yandex.practicum.filmorate.storage.inDataBase.dao.UserRepository;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,6 +45,7 @@ public class FilmService implements FilmStorage {
     private final MPARepository mpaRepository;
     private final FilmRepository filmRepository;
     private final UserRepository userRepository;
+    private final DirectorRepository directorRepository;
 
     @Override
     @Transactional
@@ -70,6 +77,28 @@ public class FilmService implements FilmStorage {
                     });
 
             finalFilm.setGenres(genreList);
+        }
+
+        if (createFilmDto.directors() != null) {
+            List<Director> directorList = createFilmDto.directors()
+                    .stream()
+                    .map(directorIdDto -> {
+                        Optional<Director> director = directorRepository.findById(directorIdDto.id());
+                        if (director.isPresent()) {
+                            return director.get();
+                        }
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                                          "No entity [%s] with id: [%s]".formatted("genre", directorIdDto.id().toString()));
+                    })
+                    .toList();
+
+            directorList
+                    .forEach(director -> {
+                        directorRepository.addFilmDirector(filmId, director.getId());
+                        log.info("add row FILM_DIRECTOR {} to {}", filmId, director.getId());
+                    });
+
+            finalFilm.setDirectors(directorList);
         }
 
         Optional<MPA> byIdMPA = mpaRepository.findById(createFilmDto.mpa().id());
@@ -148,6 +177,13 @@ public class FilmService implements FilmStorage {
         Optional<MPA> mpaByFilmId = mpaRepository.findMpaByFilmId(updateFilmDto.id());
         mpaByFilmId.ifPresent(mpa -> finalFilm.setMpa(mpa));
 
+        Set<Long> directorsID = Optional.ofNullable(updateFilmDto.directors()).orElse(Collections.emptySet())
+                .stream()
+                .map(DirectorDto::id)
+                .collect(Collectors.toSet());
+        directorRepository.updateFilmDirectors(updateFilmDto.id(), directorsID);
+        finalFilm.setDirectors(directorRepository.findDirectorsByFilmId(finalFilm.getId()));
+
         return cs.convert(finalFilm, FilmDto.class);
     }
 
@@ -165,8 +201,40 @@ public class FilmService implements FilmStorage {
     }
 
     @Override
-    public List<FilmDto> findPopularFilms(Long count) {
-        List<Film> popularFilms = filmRepository.findPopularFilms(count);
+    public List<FilmDto> findPopularFilms(Map<String, String> allParams) {
+        Map<String, Long> finalAllParam = allParams.entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> {
+                            try {
+                                return Long.parseLong(entry.getValue());
+                            } catch (NumberFormatException e) {
+                                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                        "Incorrect request parameter [%s] value [%s]"
+                                                .formatted(entry.getKey(), entry.getValue()));
+                            }
+                        }
+                ));
+
+        if (finalAllParam.containsKey("genreId")) {
+            List<Genre> genreById = genreRepository.findById(finalAllParam.get("genreId"));
+            if (genreById.isEmpty()) {
+                throw new EntityNotFoundByIdException("Genre", finalAllParam.get("genreId").toString());
+            }
+        }
+
+        // default value "count" is 10L
+        if (!finalAllParam.containsKey("count")) {
+            long defaultSize = 10L;
+            finalAllParam.put("count", defaultSize);
+        }
+
+        List<Film> popularFilms = filmRepository.findPopularFilmsBySelection(finalAllParam);
+
+        if (popularFilms == null) {
+            return Collections.emptyList();
+        }
 
         return popularFilms
                 .stream()
@@ -182,18 +250,26 @@ public class FilmService implements FilmStorage {
             throw new EntityNotFoundByIdException("film", filmId.toString());
         }
 
-        List<Genre> genresFilm = genreRepository.findGenresByFilmId(filmId);
-        filmById.get().setGenres(genresFilm);
-
-        Optional<MPA> mpa = mpaRepository.findMpaByFilmId(filmId);
-
-        if (mpa.isEmpty()) {
-            filmById.get().setMpa(MPA.builder().build());
-        } else {
-            filmById.get().setMpa(mpa.get());
-        }
+        fillFilmFieldsFromOtherTables(filmById.get());
 
         return cs.convert(filmById.get(), FilmDto.class);
+    }
+
+    private void fillFilmFieldsFromOtherTables(Film film) {
+        Long id = film.getId();
+        List<Genre> genresFilm = genreRepository.findGenresByFilmId(id);
+        film.setGenres(genresFilm);
+
+        List<Director> directorsFilm = directorRepository.findDirectorsByFilmId(id);
+        film.setDirectors(directorsFilm);
+
+        Optional<MPA> mpa = mpaRepository.findMpaByFilmId(id);
+
+        if (mpa.isEmpty()) {
+            film.setMpa(MPA.builder().build());
+        } else {
+            film.setMpa(mpa.get());
+        }
     }
 
     @Override
@@ -210,6 +286,32 @@ public class FilmService implements FilmStorage {
         filmRepository.deleteLikeFilm(id, userId);
     }
 
+    @Override
+    public List<FilmDto> findDirectorFilms(Long directorId, String sortBy) {
+        List<Film> directorFilms = filmRepository.findDirectorFilms(directorId, sortBy);
+        for (Film film : directorFilms) {
+            fillFilmFieldsFromOtherTables(film);
+        }
+
+        return directorFilms
+                .stream()
+                .map(film -> cs.convert(film, FilmDto.class))
+                .toList();
+    }
+
+    @Override
+    public List<FilmDto> searchFilms(String query, String searchBy) {
+        List<Film> films = filmRepository.searchFilms(query, searchBy);
+        for (Film film : films) {
+            fillFilmFieldsFromOtherTables(film);
+        }
+
+        return films
+                .stream()
+                .map(film -> cs.convert(film, FilmDto.class))
+                .toList();
+    }
+
     public void checkEntityById(Long id, Long userId) {
         Optional<User> user = userRepository.findById(userId);
         if (user.isEmpty()) {
@@ -221,4 +323,30 @@ public class FilmService implements FilmStorage {
             throw new EntityNotFoundByIdException("film", id.toString());
         }
     }
+
+    @Override
+    public Set<FilmDto> recommendFilms(Long userId) {
+        userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundByIdException("User", userId.toString()));
+
+        List<Long> similarUserIds = filmRepository.findSimilarUsersByLikes(userId);
+
+        Set<Film> recommendedFilms = new HashSet<>();
+        for (Long similarUserId : similarUserIds) {
+            int maxSize = 10;
+
+            List<Film> films = filmRepository.findRecommendedFilms(userId, similarUserId);
+            recommendedFilms.addAll(films);
+
+            if (recommendedFilms.size() >= maxSize) {
+                break;
+            }
+
+        }
+
+        return recommendedFilms
+                .stream()
+                .map(film -> cs.convert(film, FilmDto.class))
+                .collect(Collectors.toSet());
+    }
+
 }

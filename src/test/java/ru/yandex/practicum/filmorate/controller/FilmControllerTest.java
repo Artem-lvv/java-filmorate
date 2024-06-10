@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.filmorate.exception.EntityDuplicateException;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundByIdException;
+import ru.yandex.practicum.filmorate.model.film.Director;
 import ru.yandex.practicum.filmorate.model.film.Film;
 import ru.yandex.practicum.filmorate.model.film.Genre;
 import ru.yandex.practicum.filmorate.model.film.MPA;
@@ -67,6 +68,9 @@ class FilmControllerTest {
         genres.add(Genre.builder().id(1L).build());
         MPA mpa = MPA.builder().id(1L).build();
 
+        List<Director> directors = new ArrayList<>();
+        directors.add(Director.builder().id(1L).name("Director's Name").build());
+
         for (int i = 0; i < 4; i++) {
             final FilmDto createFilmDto = new FilmDto((long) i,
                     "Test name create ok " + i,
@@ -74,8 +78,8 @@ class FilmControllerTest {
                     now,
                     60 + i,
                     genres,
-                    mpa);
-
+                    mpa,
+                    directors);
             filmDtos.add(createFilmDto);
         }
         when(filmStorage.findAll())
@@ -92,6 +96,8 @@ class FilmControllerTest {
         Set<GenreIdDto> genreIdDtos = new HashSet<>();
         genreIdDtos.add(GenreIdDto.builder().id(1L).build());
         MPAIdDto mpaIdDto = MPAIdDto.builder().id(1L).build();
+        Set<DirectorDto> directorDtos = new HashSet<>();
+        directorDtos.add(DirectorDto.builder().id(1L).name("Director's Name").build());
 
         final CreateFilmDto createFilmDto = new CreateFilmDto(1L,
                 "Test name create ok",
@@ -99,7 +105,8 @@ class FilmControllerTest {
                 now,
                 60,
                 genreIdDtos,
-                mpaIdDto);
+                mpaIdDto,
+                directorDtos);
 
         Film convertFilm = cs.convert(createFilmDto, Film.class);
         FilmDto convert = cs.convert(convertFilm, FilmDto.class);
@@ -124,6 +131,8 @@ class FilmControllerTest {
         Set<GenreIdDto> genreIdDtos = new HashSet<>();
         genreIdDtos.add(GenreIdDto.builder().id(1L).build());
         MPAIdDto mpaIdDto = MPAIdDto.builder().id(1L).build();
+        Set<DirectorDto> directorDtos = new HashSet<>();
+        directorDtos.add(DirectorDto.builder().id(1L).name("Director's Name").build());
 
         final CreateFilmDto incorrectFieldsFilmDto = new CreateFilmDto(1L,
                 "",
@@ -131,7 +140,8 @@ class FilmControllerTest {
                 LocalDate.of(1895, 12, 27),
                 -2,
                 genreIdDtos,
-                mpaIdDto);
+                mpaIdDto,
+                directorDtos);
 
         doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST))
                 .when(filmStorage)
@@ -149,6 +159,8 @@ class FilmControllerTest {
         Set<GenreIdDto> genreIdDtos = new HashSet<>();
         genreIdDtos.add(GenreIdDto.builder().id(1L).build());
         MPAIdDto mpaIdDto = MPAIdDto.builder().id(1L).build();
+        Set<DirectorDto> directorDtos = new HashSet<>();
+        directorDtos.add(DirectorDto.builder().id(1L).name("Director's Name").build());
 
         final CreateFilmDto createFilmDto = new CreateFilmDto(1L,
                 "Test name create ok",
@@ -156,7 +168,8 @@ class FilmControllerTest {
                 now,
                 60,
                 genreIdDtos,
-                mpaIdDto);
+                mpaIdDto,
+                directorDtos);
 
         doThrow(new EntityDuplicateException("field name", "name value"))
                 .when(filmStorage)
@@ -181,6 +194,8 @@ class FilmControllerTest {
         Set<GenreIdDto> genreIdDtos = new HashSet<>();
         genreIdDtos.add(GenreIdDto.builder().id(1L).build());
         MPAIdDto mpaIdDto = MPAIdDto.builder().id(1L).build();
+        Set<DirectorDto> directorDtos = new HashSet<>();
+        directorDtos.add(DirectorDto.builder().id(1L).name("Director's Name").build());
 
         LocalDate newReleaseDate = LocalDate.of(2000, 1, 12);
 
@@ -190,7 +205,8 @@ class FilmControllerTest {
                 newReleaseDate,
                 120,
                 genreIdDtos,
-                mpaIdDto);
+                mpaIdDto,
+                directorDtos);
 
         Film convertFilm = cs.convert(updateFilmDto, Film.class);
         FilmDto filmDto = cs.convert(convertFilm, FilmDto.class);
@@ -220,6 +236,8 @@ class FilmControllerTest {
         Set<GenreIdDto> genreIdDtos = new HashSet<>();
         genreIdDtos.add(GenreIdDto.builder().id(1L).build());
         MPAIdDto mpaIdDto = MPAIdDto.builder().id(1L).build();
+        Set<DirectorDto> directorDtos = new HashSet<>();
+        directorDtos.add(DirectorDto.builder().id(1L).name("Director's Name").build());
 
         LocalDate newReleaseDate = LocalDate.of(2000, 1, 12);
 
@@ -229,7 +247,8 @@ class FilmControllerTest {
                 newReleaseDate,
                 120,
                 genreIdDtos,
-                mpaIdDto);
+                mpaIdDto,
+                directorDtos);
 
         doThrow(new EntityNotFoundByIdException("film", updateFilmDto.id().toString()))
                 .when(filmStorage)
@@ -246,6 +265,8 @@ class FilmControllerTest {
         Set<GenreIdDto> genreIdDtos = new HashSet<>();
         genreIdDtos.add(GenreIdDto.builder().id(1L).build());
         MPAIdDto mpaIdDto = MPAIdDto.builder().id(1L).build();
+        Set<DirectorDto> directorDtos = new HashSet<>();
+        directorDtos.add(DirectorDto.builder().id(1L).name("Director's Name").build());
 
         LocalDate newReleaseDate = LocalDate.of(2000, 1, 12);
 
@@ -255,7 +276,8 @@ class FilmControllerTest {
                 newReleaseDate,
                 120,
                 genreIdDtos,
-                mpaIdDto);
+                mpaIdDto,
+                directorDtos);
 
         doThrow(new EntityDuplicateException("field name", "name value"))
                 .when(filmStorage)
@@ -283,6 +305,8 @@ class FilmControllerTest {
         Set<GenreIdDto> genreIdDtos = new HashSet<>();
         genreIdDtos.add(GenreIdDto.builder().id(1L).build());
         MPAIdDto mpaIdDto = MPAIdDto.builder().id(1L).build();
+        Set<DirectorDto> directorDtos = new HashSet<>();
+        directorDtos.add(DirectorDto.builder().id(1L).name("Director's Name").build());
         LocalDate now = LocalDate.now();
 
         final CreateFilmDto createFilmDto = new CreateFilmDto(1L,
@@ -291,7 +315,8 @@ class FilmControllerTest {
                 now,
                 60,
                 genreIdDtos,
-                mpaIdDto);
+                mpaIdDto,
+                directorDtos);
 
         FilmDto filmDto = filmStorage.create(createFilmDto);
 
