@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -83,5 +84,11 @@ public class FilmController {
     @DeleteMapping("/{filmId}")
     public void deleteFilm(@PathVariable long filmId) {
         filmStorage.deleteFilm(filmId);
+    }
+
+    @GetMapping("/common")
+    public Collection<FilmDto> findAllCommonFilms(@RequestParam @Positive final Long userId,
+                                                  @RequestParam @Positive final Long friendId) {
+        return filmStorage.findAllCommonFilms(userId, friendId);
     }
 }
