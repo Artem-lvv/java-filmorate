@@ -13,7 +13,7 @@ public class CreateReviewDtoToReviewConverter implements Converter<CreateReviewD
                 .content(src.content())
                 .isPositive(src.isPositive())
                 .userId(src.userId())
-                .filmId(src.userId())
+                .filmId(src.filmId())
                 .build();
     }
 }

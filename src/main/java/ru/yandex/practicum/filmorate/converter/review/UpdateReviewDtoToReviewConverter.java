@@ -14,7 +14,7 @@ public class UpdateReviewDtoToReviewConverter implements Converter<UpdateReviewD
                 .content(src.content())
                 .isPositive(src.isPositive())
                 .userId(src.userId())
-                .filmId(src.userId())
+                .filmId(src.filmId())
                 .build();
     }
 }
