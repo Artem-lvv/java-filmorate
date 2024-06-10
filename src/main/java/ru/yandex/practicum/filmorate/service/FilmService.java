@@ -350,10 +350,10 @@ public class FilmService implements FilmStorage {
                 .collect(Collectors.toSet());
     }
 
-
     public void deleteFilm(Long filmId) {
         filmRepository.deleteFilm(filmId);
     }
+
     @Override
     public Collection<FilmDto> findAllCommonFilms(final Long userId, final Long friendId) {
         return filmRepository.findAllCommonFilms(userId, friendId)
