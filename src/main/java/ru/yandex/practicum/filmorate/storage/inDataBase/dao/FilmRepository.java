@@ -108,7 +108,7 @@ public class FilmRepository {
                         "f.duration, " +
                         "COUNT(fl.user_id) AS likes_count " +
                         "FROM film f " +
-                        "JOIN film_likes fl ON f.id = fl.film_id " +
+                        "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
                         "LEFT JOIN film_genre fg ON f.id = fg.film_id " +
                         "WHERE 1=1 "
         );
