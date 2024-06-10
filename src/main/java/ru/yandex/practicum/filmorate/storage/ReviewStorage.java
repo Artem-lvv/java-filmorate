@@ -12,17 +12,17 @@ public interface ReviewStorage {
 
     Review update(final UpdateReviewDto updateReviewDto);
 
-    void remove(final Long id);
+    void remove(final long id);
 
-    Review findByIdOrElseThrow(final Long id);
+    Review findByIdOrElseThrow(final long id);
 
     Collection<Review> findAll(final Long filmId, final int count);
 
-    Review addLike(final Long reviewId, final Long userId);
+    Review addLike(final long reviewId, final long userId);
 
-    Review addDislike(final Long reviewId, final Long userId);
+    Review addDislike(final long reviewId, final long userId);
 
-    Review removeLike(final Long reviewId, final Long userId);
+    Review removeLike(final long reviewId, final long userId);
 
-    Review removeDislike(final Long reviewId, final Long userId);
+    Review removeDislike(final long reviewId, final long userId);
 }

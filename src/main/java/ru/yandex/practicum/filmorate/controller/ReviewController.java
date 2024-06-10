@@ -19,7 +19,7 @@ public class ReviewController {
     private final ReviewStorage reviewStorage;
 
     @GetMapping("/{id}")
-    public Review findOne(@PathVariable @Positive final Long id) {
+    public Review findOne(@PathVariable @Positive final long id) {
         return reviewStorage.findByIdOrElseThrow(id);
     }
 
@@ -41,27 +41,27 @@ public class ReviewController {
     }
 
     @DeleteMapping(value = "/{id}")
-    public void removeLike(@PathVariable @Positive final Long id) {
+    public void removeLike(@PathVariable @Positive final long id) {
         reviewStorage.remove(id);
     }
 
     @PutMapping(value = "/{reviewId}/like/{userId}")
-    public Review updateLike(@PathVariable @Positive final Long reviewId, @PathVariable @Positive final Long userId) {
+    public Review updateLike(@PathVariable @Positive final long reviewId, @PathVariable @Positive final long userId) {
         return reviewStorage.addLike(reviewId, userId);
     }
 
     @PutMapping(value = "/{reviewId}/dislike/{userId}")
-    public Review updateDislike(@PathVariable @Positive final Long reviewId, @PathVariable @Positive final Long userId) {
+    public Review updateDislike(@PathVariable @Positive final long reviewId, @PathVariable @Positive final long userId) {
         return reviewStorage.addDislike(reviewId, userId);
     }
 
     @DeleteMapping(value = "/{reviewId}/like/{userId}")
-    public Review removeLike(@PathVariable @Positive final Long reviewId, @PathVariable @Positive final Long userId) {
+    public Review removeLike(@PathVariable @Positive final long reviewId, @PathVariable @Positive final long userId) {
         return reviewStorage.removeLike(reviewId, userId);
     }
 
     @DeleteMapping(value = "/{reviewId}/dislike/{userId}")
-    public Review removeDislike(@PathVariable @Positive final Long reviewId, @PathVariable @Positive final Long userId) {
+    public Review removeDislike(@PathVariable @Positive final long reviewId, @PathVariable @Positive final long userId) {
         return reviewStorage.removeDislike(reviewId, userId);
     }
 

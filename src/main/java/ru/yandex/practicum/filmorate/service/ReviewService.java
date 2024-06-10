@@ -71,13 +71,13 @@ public class ReviewService implements ReviewStorage {
     }
 
     @Override
-    public void remove(final Long id) {
+    public void remove(final long id) {
         findByIdOrElseThrow(id);
         reviewRepository.delete(id);
     }
 
-    public Review findByIdOrElseThrow(final Long id) {
-        return reviewRepository.findById(id).orElseThrow(() -> new EntityNotFoundByIdException("review", id.toString()));
+    public Review findByIdOrElseThrow(final long id) {
+        return reviewRepository.findById(id).orElseThrow(() -> new EntityNotFoundByIdException("review", "id: " + id));
     }
 
     @Override
@@ -90,9 +90,9 @@ public class ReviewService implements ReviewStorage {
     }
 
     @Override
-    public Review addLike(final Long reviewId, final Long userId) {
+    public Review addLike(final long reviewId, final long userId) {
         Review review = findByIdOrElseThrow(reviewId);
-        userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundByIdException("like", userId.toString()));
+        userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundByIdException("like", "userId: " + userId));
 
         long useful = review.getUseful();
         ++useful;
@@ -106,9 +106,9 @@ public class ReviewService implements ReviewStorage {
     }
 
     @Override
-    public Review addDislike(final Long reviewId, final Long userId) {
+    public Review addDislike(final long reviewId, final long userId) {
         Review review = findByIdOrElseThrow(reviewId);
-        userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundByIdException("like", userId.toString()));
+        userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundByIdException("like", "userId: " + userId));
 
         long useful = review.getUseful();
         --useful;
@@ -127,9 +127,9 @@ public class ReviewService implements ReviewStorage {
     }
 
     @Override
-    public Review removeLike(final Long reviewId, final Long userId) {
+    public Review removeLike(final long reviewId, final long userId) {
         Review review = findByIdOrElseThrow(reviewId);
-        userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundByIdException("like", userId.toString()));
+        userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundByIdException("like", "userId: " + userId));
         long useful = review.getUseful();
         --useful;
         review.setUseful(useful);
@@ -142,9 +142,9 @@ public class ReviewService implements ReviewStorage {
     }
 
     @Override
-    public Review removeDislike(final Long reviewId, final Long userId) {
+    public Review removeDislike(final long reviewId, final long userId) {
         Review review = findByIdOrElseThrow(reviewId);
-        userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundByIdException("like", userId.toString()));
+        userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundByIdException("like", "userId: " + userId));
         long useful = review.getUseful();
         ++useful;
         review.setUseful(useful);
@@ -156,12 +156,12 @@ public class ReviewService implements ReviewStorage {
         return review;
     }
 
-    private void removeLike(final Long reviewId, final Long userId, final long useful) {
+    private void removeLike(final long reviewId, final long userId, final long useful) {
         reviewRepository.removeLike(reviewId, userId);
         reviewRepository.updateUseful(reviewId, useful);
     }
 
-    private void saveLike(final Long reviewId, final Long userId, final long useful, final boolean isPositive) {
+    private void saveLike(final long reviewId, final long userId, final long useful, final boolean isPositive) {
         reviewRepository.saveLike(reviewId, userId, isPositive);
         reviewRepository.updateUseful(reviewId, useful);
     }
