@@ -5,6 +5,7 @@ import ru.yandex.practicum.filmorate.model.film.dto.CreateFilmDto;
 import ru.yandex.practicum.filmorate.model.film.dto.FilmDto;
 import ru.yandex.practicum.filmorate.model.film.dto.UpdateFilmDto;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;

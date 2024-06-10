@@ -13,6 +13,7 @@ import ru.yandex.practicum.filmorate.storage.inDataBase.dao.mapper.FilmRowMapper
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
