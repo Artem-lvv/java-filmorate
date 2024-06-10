@@ -13,6 +13,7 @@ import ru.yandex.practicum.filmorate.storage.inDataBase.dao.mapper.FilmRowMapper
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -23,6 +24,16 @@ import java.util.Optional;
 public class FilmRepository {
     private final JdbcTemplate jdbcTemplate;
     private final FilmRowMapper filmRowMapper;
+    private static final String FIND_ALL_COMMON_FILMS_QUERY = "SELECT f.*, " +
+            "COUNT(l3.film_id) FROM film AS f " +
+            "LEFT JOIN film_likes AS l1 ON f.id = l1.film_id " +
+            "LEFT JOIN users AS u1 ON l1.user_id = u1.id " +
+            "LEFT JOIN film_likes AS l2 ON l1.film_id = l2.film_id " +
+            "LEFT JOIN users AS u2 ON l2.user_id = u2.id " +
+            "LEFT JOIN film_likes AS l3 ON f.id = l3.film_id " +
+            "WHERE u1.id = ? AND u2.id = ? " +
+            "GROUP BY f.id " +
+            "ORDER BY COUNT(l3.film_id) DESC, f.id";
 
     public Long create(CreateFilmDto createFilmDto) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -108,7 +119,7 @@ public class FilmRepository {
                         "f.duration, " +
                         "COUNT(fl.user_id) AS likes_count " +
                         "FROM film f " +
-                        "JOIN film_likes fl ON f.id = fl.film_id " +
+                        "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
                         "LEFT JOIN film_genre fg ON f.id = fg.film_id " +
                         "WHERE 1=1 "
         );
@@ -132,6 +143,7 @@ public class FilmRepository {
 
         return jdbcTemplate.query(sqlQuery.toString(), params.toArray(), filmRowMapper);
     }
+
     public List<Long> findSimilarUsersByLikes(Long userId) {
         String sql = "SELECT uf1.user_id, COUNT(*) AS common_likes " +
                 "FROM FILM_LIKES AS uf1 " +
@@ -171,5 +183,44 @@ public class FilmRepository {
         }
 
         return jdbcTemplate.query(sqlQuery.toString(), filmRowMapper, directorId);
+    }
+
+    public List<Film> searchFilms(String query, String searchBy) {
+        StringBuilder sqlQuery = new StringBuilder(
+                "SELECT f.id, f.name, f.description, f.release_date, f.duration FROM FILM AS f\n" +
+                        "LEFT JOIN FILM_DIRECTOR AS fd ON f.ID = fd.FILM_ID\n" +
+                        "LEFT JOIN DIRECTOR AS d ON d.ID = fd.DIRECTOR_ID\n" +
+                        "LEFT JOIN (\n" +
+                        "SELECT film_id, count(*) likes_count\n" +
+                        "FROM FILM_LIKES\n" +
+                        "GROUP BY film_id\n" +
+                        ") fl ON fl.film_id = f.ID\n" +
+                        "WHERE \n"
+        );
+
+        String searchStr = "%" + query + "%";
+        List<Object> params = new ArrayList<>();
+        if (searchBy.contains("director")) {
+            sqlQuery.append("d.NAME LIKE ?\n");
+            params.add(searchStr);
+        }
+        if (searchBy.contains("director") && searchBy.contains("title")) {
+            sqlQuery.append("OR\n");
+        }
+        if (searchBy.contains("title")) {
+            sqlQuery.append("f.name LIKE ?\n");
+            params.add(searchStr);
+        }
+        sqlQuery.append("ORDER BY fl.likes_count DESC\n");
+
+        return jdbcTemplate.query(sqlQuery.toString(), filmRowMapper, params.toArray());
+    }
+
+    public void deleteFilm(Long filmId) {
+        jdbcTemplate.update("DELETE FROM FILM WHERE id = ?", filmId);
+    }
+
+    public Collection<Film> findAllCommonFilms(final Long userId, final Long friendId) {
+        return jdbcTemplate.query(FIND_ALL_COMMON_FILMS_QUERY, filmRowMapper, userId, friendId);
     }
 }

@@ -24,6 +24,13 @@ import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.inDataBase.dao.*;
 
 import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static ru.yandex.practicum.filmorate.model.feed.EventType.LIKE;
@@ -74,6 +81,28 @@ public class FilmService implements FilmStorage {
                     });
 
             finalFilm.setGenres(genreList);
+        }
+
+        if (createFilmDto.directors() != null) {
+            List<Director> directorList = createFilmDto.directors()
+                    .stream()
+                    .map(directorIdDto -> {
+                        Optional<Director> director = directorRepository.findById(directorIdDto.id());
+                        if (director.isPresent()) {
+                            return director.get();
+                        }
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                "No entity [%s] with id: [%s]".formatted("genre", directorIdDto.id().toString()));
+                    })
+                    .toList();
+
+            directorList
+                    .forEach(director -> {
+                        directorRepository.addFilmDirector(filmId, director.getId());
+                        log.info("add row FILM_DIRECTOR {} to {}", filmId, director.getId());
+                    });
+
+            finalFilm.setDirectors(directorList);
         }
 
         Optional<MPA> byIdMPA = mpaRepository.findById(createFilmDto.mpa().id());
@@ -286,6 +315,19 @@ public class FilmService implements FilmStorage {
                 .toList();
     }
 
+    @Override
+    public List<FilmDto> searchFilms(String query, String searchBy) {
+        List<Film> films = filmRepository.searchFilms(query, searchBy);
+        for (Film film : films) {
+            fillFilmFieldsFromOtherTables(film);
+        }
+
+        return films
+                .stream()
+                .map(film -> cs.convert(film, FilmDto.class))
+                .toList();
+    }
+
     public void checkEntityById(Long id, Long userId) {
         Optional<User> user = userRepository.findById(userId);
         if (user.isEmpty()) {
@@ -314,7 +356,6 @@ public class FilmService implements FilmStorage {
             if (recommendedFilms.size() >= maxSize) {
                 break;
             }
-
         }
 
         return recommendedFilms
@@ -323,4 +364,17 @@ public class FilmService implements FilmStorage {
                 .collect(Collectors.toSet());
     }
 
+    public void deleteFilm(Long filmId) {
+        filmRepository.deleteFilm(filmId);
+    }
+
+    @Override
+    public Collection<FilmDto> findAllCommonFilms(final Long userId, final Long friendId) {
+        return filmRepository.findAllCommonFilms(userId, friendId)
+                .stream()
+                .map(film -> {
+                    film.setGenres(genreRepository.findGenresByFilmId(film.getId()));
+                    return cs.convert(film, FilmDto.class);
+                }).toList();
+    }
 }

@@ -39,6 +39,11 @@ public class UserController {
         return userStorage.update(updateUserDto);
     }
 
+    @GetMapping("/{id}")
+    public UserDto findById(@PathVariable Long id) {
+        return userStorage.findById(id);
+    }
+
     @ResponseStatus(HttpStatus.OK)
     @PutMapping("/{id}/friends/{friendId}")
     public void addFriend(@PathVariable Long id, @PathVariable Long friendId) {
@@ -66,6 +71,11 @@ public class UserController {
         return filmStorage.recommendFilms(id);
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @DeleteMapping("/{userId}")
+    public void deleteUser(@PathVariable long userId) {
+        userStorage.deleteUser(userId);
+    }
     @GetMapping("/{userId}/feed")
     public Collection<Feed> getAllFeed(@PathVariable Long userId) {
         return feedService.getAllFeed(userId);
