@@ -12,17 +12,23 @@ import ru.yandex.practicum.filmorate.storage.inDataBase.dao.mapper.FilmRowMapper
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Repository
 @RequiredArgsConstructor
 public class FilmRepository {
     private final JdbcTemplate jdbcTemplate;
     private final FilmRowMapper filmRowMapper;
+    private static final String FIND_ALL_COMMON_FILMS_QUERY = "SELECT f.*, " +
+            "COUNT(l3.film_id) FROM film AS f " +
+            "LEFT JOIN film_likes AS l1 ON f.id = l1.film_id " +
+            "LEFT JOIN users AS u1 ON l1.user_id = u1.id " +
+            "LEFT JOIN film_likes AS l2 ON l1.film_id = l2.film_id " +
+            "LEFT JOIN users AS u2 ON l2.user_id = u2.id " +
+            "LEFT JOIN film_likes AS l3 ON f.id = l3.film_id " +
+            "WHERE u1.id = ? AND u2.id = ? " +
+            "GROUP BY f.id " +
+            "ORDER BY COUNT(l3.film_id) DESC, f.id";
 
     public Long create(CreateFilmDto createFilmDto) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -185,7 +191,7 @@ public class FilmRepository {
                         "GROUP BY film_id\n" +
                         ") fl ON fl.film_id = f.ID\n" +
                         "WHERE \n"
-                );
+        );
 
         String searchStr = "%" + query + "%";
         List<Object> params = new ArrayList<>();
@@ -203,5 +209,9 @@ public class FilmRepository {
         sqlQuery.append("ORDER BY fl.likes_count DESC\n");
 
         return jdbcTemplate.query(sqlQuery.toString(), filmRowMapper, params.toArray());
+    }
+
+    public Collection<Film> findAllCommonFilms(final Long userId, final Long friendId) {
+        return jdbcTemplate.query(FIND_ALL_COMMON_FILMS_QUERY, filmRowMapper, userId, friendId);
     }
 }

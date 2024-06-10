@@ -5,10 +5,7 @@ import ru.yandex.practicum.filmorate.model.film.dto.CreateFilmDto;
 import ru.yandex.practicum.filmorate.model.film.dto.FilmDto;
 import ru.yandex.practicum.filmorate.model.film.dto.UpdateFilmDto;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 public interface FilmStorage {
     FilmDto create(CreateFilmDto createFilmDto);
@@ -32,4 +29,6 @@ public interface FilmStorage {
     List<FilmDto> findDirectorFilms(Long directorId, String sortBy);
 
     List<FilmDto> searchFilms(String query, String searchBy);
+
+    Collection<FilmDto> findAllCommonFilms(final Long userId, final Long friendId);
 }

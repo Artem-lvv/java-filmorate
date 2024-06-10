@@ -26,12 +26,7 @@ import ru.yandex.practicum.filmorate.storage.inDataBase.dao.GenreRepository;
 import ru.yandex.practicum.filmorate.storage.inDataBase.dao.MPARepository;
 import ru.yandex.practicum.filmorate.storage.inDataBase.dao.UserRepository;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -88,7 +83,7 @@ public class FilmService implements FilmStorage {
                             return director.get();
                         }
                         throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                                                          "No entity [%s] with id: [%s]".formatted("genre", directorIdDto.id().toString()));
+                                "No entity [%s] with id: [%s]".formatted("genre", directorIdDto.id().toString()));
                     })
                     .toList();
 
@@ -349,4 +344,11 @@ public class FilmService implements FilmStorage {
                 .collect(Collectors.toSet());
     }
 
+    @Override
+    public Collection<FilmDto> findAllCommonFilms(final Long userId, final Long friendId) {
+        return filmRepository.findAllCommonFilms(userId, friendId)
+                .stream()
+                .map(film -> cs.convert(film, FilmDto.class))
+                .toList();
+    }
 }
