@@ -340,7 +340,6 @@ public class FilmService implements FilmStorage {
             if (recommendedFilms.size() >= maxSize) {
                 break;
             }
-
         }
 
         return recommendedFilms
