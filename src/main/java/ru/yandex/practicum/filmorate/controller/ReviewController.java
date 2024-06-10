@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +19,7 @@ public class ReviewController {
     private final ReviewStorage reviewStorage;
 
     @GetMapping("/{id}")
-    public Review findOne(@PathVariable final Long id) {
+    public Review findOne(@PathVariable @Positive final Long id) {
         return reviewStorage.findByIdOrElseThrow(id);
     }
 
@@ -40,27 +41,27 @@ public class ReviewController {
     }
 
     @DeleteMapping(value = "/{id}")
-    public void removeLike(@PathVariable final Long id) {
+    public void removeLike(@PathVariable @Positive final Long id) {
         reviewStorage.remove(id);
     }
 
-    @PutMapping(value = "{reviewId}/like/{userId}")
-    public Review updateLike(@PathVariable final Long reviewId, @PathVariable final Long userId) {
+    @PutMapping(value = "/{reviewId}/like/{userId}")
+    public Review updateLike(@PathVariable @Positive final Long reviewId, @PathVariable @Positive final Long userId) {
         return reviewStorage.addLike(reviewId, userId);
     }
 
-    @PutMapping(value = "{reviewId}/dislike/{userId}")
-    public Review updateDislike(@PathVariable final Long reviewId, @PathVariable final Long userId) {
+    @PutMapping(value = "/{reviewId}/dislike/{userId}")
+    public Review updateDislike(@PathVariable @Positive final Long reviewId, @PathVariable @Positive final Long userId) {
         return reviewStorage.addDislike(reviewId, userId);
     }
 
-    @DeleteMapping(value = "{reviewId}/like/{userId}")
-    public Review removeLike(@PathVariable final Long reviewId, @PathVariable final Long userId) {
+    @DeleteMapping(value = "/{reviewId}/like/{userId}")
+    public Review removeLike(@PathVariable @Positive final Long reviewId, @PathVariable @Positive final Long userId) {
         return reviewStorage.removeLike(reviewId, userId);
     }
 
-    @DeleteMapping(value = "{reviewId}/dislike/{userId}")
-    public Review removeDislike(@PathVariable final Long reviewId, @PathVariable final Long userId) {
+    @DeleteMapping(value = "/{reviewId}/dislike/{userId}")
+    public Review removeDislike(@PathVariable @Positive final Long reviewId, @PathVariable @Positive final Long userId) {
         return reviewStorage.removeDislike(reviewId, userId);
     }
 

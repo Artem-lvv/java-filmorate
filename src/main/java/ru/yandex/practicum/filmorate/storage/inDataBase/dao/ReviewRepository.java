@@ -5,7 +5,6 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
-import org.springframework.util.ObjectUtils;
 import ru.yandex.practicum.filmorate.exception.InternalServerException;
 import ru.yandex.practicum.filmorate.model.review.Review;
 import ru.yandex.practicum.filmorate.model.review.dto.CreateReviewDto;
@@ -41,10 +40,6 @@ public class ReviewRepository {
     private static final String FAILED_TO_DELETE_DATA = "Failed to update data";
 
     public Optional<Review> findById(final Long id) {
-        if (ObjectUtils.isEmpty(id)) {
-            return Optional.empty();
-        }
-
         try {
             final Review review = jdbc.queryForObject(FIND_BY_ID_QUERY, reviewRowMapper, id);
             return Optional.ofNullable(review);
@@ -111,7 +106,7 @@ public class ReviewRepository {
         checkRowsUpdated(rowsUpdated, FAILED_TO_UPDATE_DATA);
     }
 
-    public void saveLike(final Long reviewId, final Long userId, final Boolean isPositive) {
+    public void saveLike(final Long reviewId, final Long userId, final boolean isPositive) {
         final int rowsUpdated = jdbc.update(INSERT_LIKE_QUERY, reviewId, userId, isPositive);
 
         checkRowsUpdated(rowsUpdated, FAILED_TO_UPDATE_DATA);

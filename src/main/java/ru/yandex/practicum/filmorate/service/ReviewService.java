@@ -86,7 +86,6 @@ public class ReviewService implements ReviewStorage {
             reviewRepository.findMany();
         }
 
-        filmRepository.findById(filmId);
         return reviewRepository.findMany(filmId, count);
     }
 
@@ -98,7 +97,7 @@ public class ReviewService implements ReviewStorage {
         long useful = review.getUseful();
         ++useful;
 
-        addLikeOrDislike(reviewId, userId, useful, true);
+        saveLike(reviewId, userId, useful, true);
         review.setUseful(useful);
 
         log.info("addLike {}", review);
@@ -120,7 +119,7 @@ public class ReviewService implements ReviewStorage {
 
         review.setUseful(useful);
 
-        addLikeOrDislike(reviewId, userId, useful, false);
+        saveLike(reviewId, userId, useful, false);
 
         log.info("addDislike {}", review);
 
@@ -135,7 +134,7 @@ public class ReviewService implements ReviewStorage {
         --useful;
         review.setUseful(useful);
 
-        removeLikeOrDislike(reviewId, userId, useful);
+        removeLike(reviewId, userId, useful);
 
         log.info("removeLike {}", review);
 
@@ -150,20 +149,19 @@ public class ReviewService implements ReviewStorage {
         ++useful;
         review.setUseful(useful);
 
-        removeLikeOrDislike(reviewId, userId, useful);
+        removeLike(reviewId, userId, useful);
 
         log.info("removeDislike {}", review);
 
         return review;
     }
 
-
-    private void removeLikeOrDislike(final Long reviewId, final Long userId, final long useful) {
+    private void removeLike(final Long reviewId, final Long userId, final long useful) {
         reviewRepository.removeLike(reviewId, userId);
         reviewRepository.updateUseful(reviewId, useful);
     }
 
-    private void addLikeOrDislike(final Long reviewId, final Long userId, final long useful, final boolean isPositive) {
+    private void saveLike(final Long reviewId, final Long userId, final long useful, final boolean isPositive) {
         reviewRepository.saveLike(reviewId, userId, isPositive);
         reviewRepository.updateUseful(reviewId, useful);
     }
