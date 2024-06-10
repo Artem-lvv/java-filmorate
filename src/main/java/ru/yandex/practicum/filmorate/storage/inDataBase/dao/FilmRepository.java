@@ -12,11 +12,7 @@ import ru.yandex.practicum.filmorate.storage.inDataBase.dao.mapper.FilmRowMapper
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Repository
 @RequiredArgsConstructor
@@ -203,5 +199,9 @@ public class FilmRepository {
         sqlQuery.append("ORDER BY fl.likes_count DESC\n");
 
         return jdbcTemplate.query(sqlQuery.toString(), filmRowMapper, params.toArray());
+    }
+
+    public void deleteFilm(Long filmId) {
+        jdbcTemplate.update("DELETE FROM FILM WHERE id = ?", filmId);
     }
 }

@@ -78,4 +78,10 @@ public class FilmController {
                                      @RequestParam(name = "by", defaultValue = "") String searchBy) {
         return filmStorage.searchFilms(query, searchBy);
     }
+
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @DeleteMapping("/{filmId}")
+    public void deleteFilm(@PathVariable long filmId) {
+        filmStorage.deleteFilm(filmId);
+    }
 }

@@ -349,4 +349,8 @@ public class FilmService implements FilmStorage {
                 .collect(Collectors.toSet());
     }
 
+
+    public void deleteFilm(Long filmId) {
+        filmRepository.deleteFilm(filmId);
+    }
 }
