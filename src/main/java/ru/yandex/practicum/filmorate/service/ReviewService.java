@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundByIdException;
+import ru.yandex.practicum.filmorate.model.feed.Feed;
 import ru.yandex.practicum.filmorate.model.review.Review;
 import ru.yandex.practicum.filmorate.model.review.dto.CreateReviewDto;
 import ru.yandex.practicum.filmorate.model.review.dto.UpdateReviewDto;
@@ -18,6 +19,9 @@ import ru.yandex.practicum.filmorate.storage.inDataBase.dao.UserRepository;
 
 import java.util.Collection;
 
+import static ru.yandex.practicum.filmorate.model.feed.EventType.*;
+import static ru.yandex.practicum.filmorate.model.feed.Operation.*;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -27,6 +31,7 @@ public class ReviewService implements ReviewStorage {
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final FilmRepository filmRepository;
+    private final FeedService feedService;
 
     @Override
     @Transactional
@@ -42,6 +47,12 @@ public class ReviewService implements ReviewStorage {
         review.setReviewId(id);
 
         log.info("Create {}", review);
+        feedService.addFeed(Feed.builder()
+                .entityId(review.getReviewId())
+                .userId(review.getUserId())
+                .eventType(REVIEW)
+                .operation(ADD)
+                .build());
 
         return review;
     }
@@ -66,14 +77,28 @@ public class ReviewService implements ReviewStorage {
         reviewRepository.update(updateReviewDto);
 
         log.info("Update {}", updateReviewDto);
+        feedService.addFeed(Feed.builder()
+                .entityId(review.getReviewId())
+                .userId(review.getUserId())
+                .eventType(REVIEW)
+                .operation(UPDATE)
+                .build());
 
         return review;
     }
 
     @Override
     public void remove(final Long id) {
-        findByIdOrElseThrow(id);
+        final long userId = findByIdOrElseThrow(id).getUserId();
+
         reviewRepository.delete(id);
+        feedService.addFeed(Feed.builder()
+                .entityId(id)
+                .userId(userId)
+                .eventType(REVIEW)
+                .operation(REMOVE)
+                .build());
+
     }
 
     public Review findByIdOrElseThrow(final Long id) {

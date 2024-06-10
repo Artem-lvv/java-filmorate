@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.model.feed;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import java.sql.Timestamp;
@@ -17,4 +18,9 @@ public class Feed {
     private Operation operation;
     @Builder.Default
     private Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+
+    @JsonProperty("timestamp")
+    public long getTimestampInSeconds() {
+        return timestamp.getTime();
+    }
 }

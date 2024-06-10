@@ -76,6 +76,7 @@ public class UserController {
     public void deleteUser(@PathVariable long userId) {
         userStorage.deleteUser(userId);
     }
+
     @GetMapping("/{userId}/feed")
     public Collection<Feed> getAllFeed(@PathVariable Long userId) {
         return feedService.getAllFeed(userId);
