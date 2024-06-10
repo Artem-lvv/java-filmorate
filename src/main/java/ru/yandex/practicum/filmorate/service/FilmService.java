@@ -348,7 +348,9 @@ public class FilmService implements FilmStorage {
     public Collection<FilmDto> findAllCommonFilms(final Long userId, final Long friendId) {
         return filmRepository.findAllCommonFilms(userId, friendId)
                 .stream()
-                .map(film -> cs.convert(film, FilmDto.class))
-                .toList();
+                .map(film -> {
+                    film.setGenres(genreRepository.findGenresByFilmId(film.getId()));
+                    return cs.convert(film, FilmDto.class);
+                }).toList();
     }
 }
