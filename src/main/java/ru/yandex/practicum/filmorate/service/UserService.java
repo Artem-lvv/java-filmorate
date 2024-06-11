@@ -46,13 +46,16 @@ public class UserService implements UserStorage {
             throw new EntityDuplicateException("email", createUserDto.email());
         }
 
-        User finalUser = cs.convert(createUserDto, User.class);
+        CreateUserDto finalCreateUserDto = new CreateUserDto(
+                createUserDto.id(),
+                createUserDto.email(),
+                createUserDto.login(),
+                (createUserDto.name().isEmpty() ? createUserDto.login() : createUserDto.name()),
+                createUserDto.birthday());
 
-        if (finalUser.getName() == null) {
-            finalUser.setName(finalUser.getLogin());
-        }
+        User finalUser = cs.convert(finalCreateUserDto, User.class);
 
-        Long id = userRepository.create(createUserDto);
+        Long id = userRepository.create(finalCreateUserDto);
         finalUser.setId(id);
 
         log.info("Create {}", finalUser);
