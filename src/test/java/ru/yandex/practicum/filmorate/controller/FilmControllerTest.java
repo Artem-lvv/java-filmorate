@@ -45,10 +45,10 @@ class FilmControllerTest {
     private static final String ENDPOINT_PATH = "/films";
 
     @Autowired
-    private MockMvc mvc;
+    MockMvc mvc;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    ObjectMapper objectMapper;
 
     @MockBean
     private FilmStorage filmStorage;

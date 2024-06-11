@@ -17,6 +17,7 @@ import ru.yandex.practicum.filmorate.model.user.User;
 import ru.yandex.practicum.filmorate.model.user.dto.CreateUserDto;
 import ru.yandex.practicum.filmorate.model.user.dto.UpdateUserDto;
 import ru.yandex.practicum.filmorate.model.user.dto.UserDto;
+import ru.yandex.practicum.filmorate.service.FeedService;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -48,6 +49,9 @@ class UserControllerTest {
 
     @MockBean(name = "userService")
     private UserStorage userStorage;
+
+    @MockBean(name = "feedService")
+    private FeedService feedService;
 
     @Qualifier("mvcConversionService")
     private final ConversionService cs;
