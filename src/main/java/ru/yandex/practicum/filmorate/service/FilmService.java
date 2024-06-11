@@ -195,7 +195,10 @@ public class FilmService implements FilmStorage {
     public List<FilmDto> findAll() {
         return filmRepository.findAll()
                 .stream()
-                .map(film -> cs.convert(film, FilmDto.class))
+                .map(film -> {
+                    fillFilmFieldsFromOtherTables(film);
+                    return cs.convert(film, FilmDto.class);
+                })
                 .toList();
     }
 
@@ -242,7 +245,10 @@ public class FilmService implements FilmStorage {
 
         return popularFilms
                 .stream()
-                .map(film -> cs.convert(film, FilmDto.class))
+                .map(film -> {
+                    fillFilmFieldsFromOtherTables(film);
+                    return cs.convert(film, FilmDto.class);
+                })
                 .toList();
     }
 
@@ -360,7 +366,10 @@ public class FilmService implements FilmStorage {
 
         return recommendedFilms
                 .stream()
-                .map(film -> cs.convert(film, FilmDto.class))
+                .map(film -> {
+                    fillFilmFieldsFromOtherTables(film);
+                    return cs.convert(film, FilmDto.class);
+                })
                 .collect(Collectors.toSet());
     }
 
@@ -373,7 +382,7 @@ public class FilmService implements FilmStorage {
         return filmRepository.findAllCommonFilms(userId, friendId)
                 .stream()
                 .map(film -> {
-                    film.setGenres(genreRepository.findGenresByFilmId(film.getId()));
+                    fillFilmFieldsFromOtherTables(film);
                     return cs.convert(film, FilmDto.class);
                 }).toList();
     }
