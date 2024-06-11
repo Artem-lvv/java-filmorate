@@ -18,12 +18,12 @@ import ru.yandex.practicum.filmorate.model.film.MPA;
 import ru.yandex.practicum.filmorate.model.film.dto.CreateFilmDto;
 import ru.yandex.practicum.filmorate.model.film.dto.DirectorDto;
 import ru.yandex.practicum.filmorate.model.film.dto.FilmDto;
+import ru.yandex.practicum.filmorate.model.film.dto.GenreIdDto;
 import ru.yandex.practicum.filmorate.model.film.dto.UpdateFilmDto;
 import ru.yandex.practicum.filmorate.model.user.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.inDataBase.dao.*;
 
-import java.util.*;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -122,7 +122,7 @@ public class FilmService implements FilmStorage {
     @Override
     @Transactional
     public FilmDto update(UpdateFilmDto updateFilmDto) {
-        Optional<Film> filmById = findById(updateFilmDto.id());
+        Optional<Film> filmById = searchFilmById(updateFilmDto.id());
 
         if (filmById.isEmpty()) {
             String message = "Film not found id " + updateFilmDto.id();
@@ -151,13 +151,18 @@ public class FilmService implements FilmStorage {
                     .map(Genre::getId)
                     .collect(Collectors.toSet());
 
-            boolean areEqual = updateFilmDto.genres().containsAll(genresIDByFilmId);
+            Set<Long> updateIdGenres = updateFilmDto.genres()
+                    .stream()
+                    .map(GenreIdDto::id)
+                    .collect(Collectors.toSet());
 
-            if (!areEqual) {
-                updateFilmDto.genres().forEach(genreIdDto -> {
-                    genreRepository.deleteFilmGenre(updateFilmDto.id(), genreIdDto.id());
-                    genreRepository.addFilmGenre(updateFilmDto.id(), genreIdDto.id());
-                });
+            boolean areEqual = updateIdGenres.equals(genresIDByFilmId);
+
+            if (updateIdGenres.isEmpty() && !genresIDByFilmId.isEmpty() || !areEqual) {
+                genresIDByFilmId.forEach(genreIdDto ->
+                        genreRepository.deleteFilmGenre(updateFilmDto.id(), genreIdDto));
+                updateFilmDto.genres().forEach(genreIdDto ->
+                        genreRepository.addFilmGenre(updateFilmDto.id(), genreIdDto.id()));
             }
         }
 
@@ -179,7 +184,7 @@ public class FilmService implements FilmStorage {
         }
 
         Optional<MPA> mpaByFilmId = mpaRepository.findMpaByFilmId(updateFilmDto.id());
-        mpaByFilmId.ifPresent(mpa -> finalFilm.setMpa(mpa));
+        mpaByFilmId.ifPresent(finalFilm::setMpa);
 
         Set<Long> directorsID = Optional.ofNullable(updateFilmDto.directors()).orElse(Collections.emptySet())
                 .stream()
@@ -202,8 +207,7 @@ public class FilmService implements FilmStorage {
                 .toList();
     }
 
-    @Override
-    public Optional<Film> findById(Long id) {
+    public Optional<Film> searchFilmById(Long id) {
         return filmRepository.findById(id);
     }
 
@@ -253,7 +257,7 @@ public class FilmService implements FilmStorage {
     }
 
     @Override
-    public FilmDto findByIdFilmWithGenreAndMpa(Long filmId) {
+    public FilmDto findById(Long filmId) {
         Optional<Film> filmById = filmRepository.findById(filmId);
 
         if (filmById.isEmpty()) {
@@ -310,6 +314,9 @@ public class FilmService implements FilmStorage {
 
     @Override
     public List<FilmDto> findDirectorFilms(Long directorId, String sortBy) {
+        directorRepository.findById(directorId)
+                .orElseThrow(() -> new EntityNotFoundByIdException("Director", directorId.toString()));
+
         List<Film> directorFilms = filmRepository.findDirectorFilms(directorId, sortBy);
         for (Film film : directorFilms) {
             fillFilmFieldsFromOtherTables(film);

@@ -18,11 +18,11 @@ public interface FilmStorage {
 
     List<FilmDto> findAll();
 
-    Optional<Film> findById(Long id);
+    Optional<Film> searchFilmById(Long id);
 
     List<FilmDto> findPopularFilms(Map<String, String> allParams);
 
-    FilmDto findByIdFilmWithGenreAndMpa(Long genreId);
+    FilmDto findById(Long filmId);
 
     void addLikeFilm(Long id, Long userId);
 

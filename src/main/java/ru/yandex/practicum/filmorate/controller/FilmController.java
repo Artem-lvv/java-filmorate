@@ -65,7 +65,7 @@ public class FilmController {
 
     @GetMapping("/{id}")
     public FilmDto findById(@PathVariable Long id) {
-        return filmStorage.findByIdFilmWithGenreAndMpa(id);
+        return filmStorage.findById(id);
     }
 
     @GetMapping("/director/{directorId}")

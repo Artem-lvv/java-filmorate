@@ -176,6 +176,7 @@ public class FilmRepository {
                         "GROUP BY film_id\n" +
                         ") fl ON fl.film_id = f.ID\n" +
                         "WHERE fd.DIRECTOR_ID = ?\n");
+
         if (sortBy.equals("year")) {
             sqlQuery.append("ORDER BY f.release_date\n");
         } else if (sortBy.equals("likes")) {

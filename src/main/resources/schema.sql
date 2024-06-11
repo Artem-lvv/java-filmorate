@@ -85,8 +85,8 @@ CREATE TABLE IF NOT EXISTS friend_requests
 -- Создаем таблицу для связи film и director (многие ко многим)
 CREATE TABLE IF NOT EXISTS film_director
 (
-    film_id  BIGINT REFERENCES film (id),
-    director_id BIGINT REFERENCES director (id),
+    film_id  BIGINT REFERENCES film (id) ON DELETE CASCADE,
+    director_id BIGINT REFERENCES director (id) ON DELETE CASCADE,
     PRIMARY KEY (film_id, director_id)
 );
 
