@@ -199,17 +199,17 @@ public class FilmRepository {
                         "WHERE \n"
         );
 
-        String searchStr = "%" + query + "%";
+        String searchStr = "%" + query.toLowerCase() + "%";
         List<Object> params = new ArrayList<>();
         if (searchBy.contains("director")) {
-            sqlQuery.append("d.NAME LIKE ?\n");
+            sqlQuery.append("lower(d.NAME) LIKE ?\n");
             params.add(searchStr);
         }
         if (searchBy.contains("director") && searchBy.contains("title")) {
             sqlQuery.append("OR\n");
         }
         if (searchBy.contains("title")) {
-            sqlQuery.append("f.name LIKE ?\n");
+            sqlQuery.append("lower(f.name) LIKE ?\n");
             params.add(searchStr);
         }
         sqlQuery.append("ORDER BY fl.likes_count DESC\n");

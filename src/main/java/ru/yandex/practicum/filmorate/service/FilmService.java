@@ -243,7 +243,7 @@ public class FilmService implements FilmStorage {
 
         List<Film> popularFilms = filmRepository.findPopularFilmsBySelection(finalAllParam);
 
-        if (popularFilms == null) {
+        if (popularFilms.isEmpty()) {
             return Collections.emptyList();
         }
 
