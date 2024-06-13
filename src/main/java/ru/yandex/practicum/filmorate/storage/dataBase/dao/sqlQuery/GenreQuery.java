@@ -1,6 +1,9 @@
 package ru.yandex.practicum.filmorate.storage.dataBase.dao.sqlQuery;
 
 public class GenreQuery {
+    private GenreQuery() {
+    }
+
     public static final String FIND_ALL = "SELECT * FROM GENRE";
     public static final String FIND_BY_ID = "SELECT * FROM GENRE WHERE ID = ?";
     public static final String FIND_RECORD_BY_FILM_ID_AND_GENRE_ID = "SELECT * FROM FILM_GENRE " +

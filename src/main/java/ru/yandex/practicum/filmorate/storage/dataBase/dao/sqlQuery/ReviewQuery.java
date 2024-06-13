@@ -1,6 +1,9 @@
 package ru.yandex.practicum.filmorate.storage.dataBase.dao.sqlQuery;
 
 public class ReviewQuery {
+    private ReviewQuery() {
+    }
+
     public static final String FIND_BY_ID_QUERY = "SELECT * FROM reviews WHERE review_id = ?";
     public static final String INSERT_QUERY = "INSERT INTO reviews (content, is_positive, user_id, film_id) "
             + "VALUES (?, ?, ?, ?)";

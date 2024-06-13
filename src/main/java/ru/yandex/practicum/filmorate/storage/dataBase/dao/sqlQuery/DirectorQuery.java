@@ -1,6 +1,9 @@
 package ru.yandex.practicum.filmorate.storage.dataBase.dao.sqlQuery;
 
 public class DirectorQuery {
+    private DirectorQuery() {
+    }
+
     public static final String FIND_ALL = "SELECT * FROM DIRECTOR";
     public static final String FIND_BY_ID = "SELECT * FROM DIRECTOR WHERE ID = ?";
     public static final String CREATE_DIRECTOR = "INSERT INTO DIRECTOR (name) VALUES (?)";

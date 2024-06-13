@@ -1,6 +1,9 @@
 package ru.yandex.practicum.filmorate.storage.dataBase.dao.sqlQuery;
 
 public class MpaQuery {
+    private MpaQuery() {
+    }
+
     public static final String FIND_BY_ID = "SELECT * FROM MOTION_PICTURE_ASSOCIATION WHERE ID = ?";
     public static final String FIND_ALL = "SELECT * FROM MOTION_PICTURE_ASSOCIATION";
     public static final String FIND_MPA_BY_FILM_ID = "SELECT * FROM MOTION_PICTURE_ASSOCIATION " +

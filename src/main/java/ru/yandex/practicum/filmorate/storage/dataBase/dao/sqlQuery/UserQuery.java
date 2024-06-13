@@ -1,6 +1,9 @@
 package ru.yandex.practicum.filmorate.storage.dataBase.dao.sqlQuery;
 
 public class UserQuery {
+    private UserQuery() {
+    }
+
     public static final String CREATE_USER = "INSERT INTO USERS (email, login, name, birthday) VALUES (?, ?, ?, ?)";
     public static final String UPDATE_USER = "UPDATE USERS SET email = ?, login = ?, name = ?, birthday = ? " +
             "WHERE id = ?";

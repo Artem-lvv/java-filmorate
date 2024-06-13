@@ -1,10 +1,11 @@
 package ru.yandex.practicum.filmorate.storage.dataBase.dao.sqlQuery;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class FilmQuery {
+    private FilmQuery() {
+    }
 
     public static final String CREATE_FILM = "INSERT INTO FILM (name, description, release_date, duration) " +
             "VALUES (?, ?, ?, ?)";
