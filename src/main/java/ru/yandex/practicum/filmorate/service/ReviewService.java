@@ -32,7 +32,7 @@ public class ReviewService implements ReviewStorage {
     private final UserRepository userRepository;
     private final FilmRepository filmRepository;
     private final FeedService feedService;
-    private final static int DEFAULT_COUNT = 10;
+    private static final int DEFAULT_COUNT = 10;
 
     @Override
     @Transactional
@@ -88,7 +88,6 @@ public class ReviewService implements ReviewStorage {
                 .eventType(REVIEW)
                 .operation(REMOVE)
                 .build());
-
     }
 
     public Review findByIdOrElseThrow(final Long id) {
