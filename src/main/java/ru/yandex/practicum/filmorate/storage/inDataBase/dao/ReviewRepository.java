@@ -25,10 +25,13 @@ public class ReviewRepository {
     private static final String FIND_BY_ID_QUERY = "SELECT * FROM reviews WHERE review_id = ?";
     private static final String INSERT_QUERY = "INSERT INTO reviews (content, is_positive, user_id, film_id) "
             + "VALUES (?, ?, ?, ?)";
-    private static final String UPDATE_QUERY = "UPDATE reviews SET content = ?, is_positive = ?"
-            + "WHERE review_id = ? AND user_id = ? AND film_id = ?";
+    /*    private static final String UPDATE_QUERY = "UPDATE reviews SET content = ?, is_positive = ?, useful = ?"
+                + "WHERE review_id = ? AND user_id = ? AND film_id = ?";*/
+    private static final String UPDATE_QUERY = "UPDATE reviews SET content = ?, is_positive = ? WHERE review_id = ?";
     private static final String FIND_ALL_AND_SORT_BY_USEFUL_QUERY = "SELECT * FROM reviews ORDER BY useful DESC";
     private static final String FIND_ALL_BY_ID_FILM_AND_SORT_BY_USEFUL_QUERY = "SELECT * FROM reviews WHERE film_id = ?"
+            + "ORDER BY useful DESC LIMIT ?";
+    private static final String FIND_ALL_AND_SORT_BY_USEFUL_WITH_COUNT_QUERY = "SELECT * FROM reviews "
             + "ORDER BY useful DESC LIMIT ?";
     private static final String DELETE_QUERY = "DELETE FROM reviews WHERE review_id = ?";
     private static final String UPDATE_USEFUL_QUERY = "UPDATE reviews SET useful = ? WHERE review_id = ?";
@@ -74,9 +77,7 @@ public class ReviewRepository {
                 UPDATE_QUERY,
                 updateReviewDto.content(),
                 updateReviewDto.isPositive(),
-                updateReviewDto.reviewId(),
-                updateReviewDto.userId(),
-                updateReviewDto.filmId()
+                updateReviewDto.reviewId()
         );
 
         checkRowsUpdated(rowsUpdated, FAILED_TO_UPDATE_DATA);
@@ -88,8 +89,12 @@ public class ReviewRepository {
         checkRowsUpdated(rowsUpdated, FAILED_TO_DELETE_DATA);
     }
 
-    public Collection<Review> findMany() {
+    public Collection<Review> findAll() {
         return jdbc.query(FIND_ALL_AND_SORT_BY_USEFUL_QUERY, reviewRowMapper);
+    }
+
+    public Collection<Review> findMany(final int count) {
+        return jdbc.query(FIND_ALL_AND_SORT_BY_USEFUL_WITH_COUNT_QUERY, reviewRowMapper, count);
     }
 
     public Collection<Review> findMany(final Long filmId, final int count) {

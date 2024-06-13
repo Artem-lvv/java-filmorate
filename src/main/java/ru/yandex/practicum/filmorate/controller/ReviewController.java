@@ -25,7 +25,7 @@ public class ReviewController {
 
     @GetMapping
     public Collection<Review> findAll(@RequestParam(required = false) final Long filmId,
-                                      @RequestParam(defaultValue = "10") final int count) {
+                                      @RequestParam(required = false) final Integer count) {
         return reviewStorage.findAll(filmId, count);
     }
 

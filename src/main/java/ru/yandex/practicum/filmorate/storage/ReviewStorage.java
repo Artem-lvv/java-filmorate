@@ -16,7 +16,7 @@ public interface ReviewStorage {
 
     Review findByIdOrElseThrow(final Long id);
 
-    Collection<Review> findAll(final Long filmId, final int count);
+    Collection<Review> findAll(final Long filmId, final Integer count);
 
     Review addLike(final Long reviewId, final Long userId);
 

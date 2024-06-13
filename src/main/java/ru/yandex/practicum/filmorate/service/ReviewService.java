@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundByIdException;
 import ru.yandex.practicum.filmorate.model.feed.Feed;
@@ -19,7 +18,7 @@ import ru.yandex.practicum.filmorate.storage.inDataBase.dao.UserRepository;
 
 import java.util.Collection;
 
-import static ru.yandex.practicum.filmorate.model.feed.EventType.*;
+import static ru.yandex.practicum.filmorate.model.feed.EventType.REVIEW;
 import static ru.yandex.practicum.filmorate.model.feed.Operation.*;
 
 @Slf4j
@@ -32,9 +31,9 @@ public class ReviewService implements ReviewStorage {
     private final UserRepository userRepository;
     private final FilmRepository filmRepository;
     private final FeedService feedService;
+    private final static int DEFAULT_COUNT = 10;
 
     @Override
-    @Transactional
     public Review create(final CreateReviewDto createReviewDto) {
         userRepository.findById(createReviewDto.userId())
                 .orElseThrow(() -> new EntityNotFoundByIdException("review", createReviewDto.toString()));
@@ -59,24 +58,12 @@ public class ReviewService implements ReviewStorage {
 
     @Override
     public Review update(final UpdateReviewDto updateReviewDto) {
-        userRepository.findById(updateReviewDto.userId())
-                .orElseThrow(() -> new EntityNotFoundByIdException("review", updateReviewDto.toString()));
-        filmRepository.findById(updateReviewDto.filmId())
-                .orElseThrow(() -> new EntityNotFoundByIdException("review", updateReviewDto.toString()));
-        findByIdOrElseThrow(updateReviewDto.reviewId());
-
-        Review review = Review.builder()
-                .useful(reviewRepository.getUseful(updateReviewDto.reviewId()))
-                .reviewId(updateReviewDto.reviewId())
-                .isPositive(updateReviewDto.isPositive())
-                .content(updateReviewDto.content())
-                .filmId(updateReviewDto.filmId())
-                .userId(updateReviewDto.userId())
-                .build();
-
         reviewRepository.update(updateReviewDto);
 
+        final Review review = findByIdOrElseThrow(updateReviewDto.reviewId());
+
         log.info("Update {}", updateReviewDto);
+
         feedService.addFeed(Feed.builder()
                 .entityId(review.getReviewId())
                 .userId(review.getUserId())
@@ -106,9 +93,20 @@ public class ReviewService implements ReviewStorage {
     }
 
     @Override
-    public Collection<Review> findAll(final Long filmId, final int count) {
-        if (ObjectUtils.isEmpty(filmId)) {
-            reviewRepository.findMany();
+    public Collection<Review> findAll(final Long filmId, final Integer count) {
+        final boolean countIsEmpty = ObjectUtils.isEmpty(count);
+        final boolean filmIsEmpty = ObjectUtils.isEmpty(filmId);
+
+        if (filmIsEmpty && countIsEmpty) {
+            return reviewRepository.findAll();
+        }
+
+        if (filmIsEmpty && !countIsEmpty && count > 0) {
+            return reviewRepository.findMany(count);
+        }
+
+        if (!filmIsEmpty && countIsEmpty) {
+            return reviewRepository.findMany(filmId, DEFAULT_COUNT);
         }
 
         return reviewRepository.findMany(filmId, count);
