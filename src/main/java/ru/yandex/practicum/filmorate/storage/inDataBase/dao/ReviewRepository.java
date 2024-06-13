@@ -25,8 +25,6 @@ public class ReviewRepository {
     private static final String FIND_BY_ID_QUERY = "SELECT * FROM reviews WHERE review_id = ?";
     private static final String INSERT_QUERY = "INSERT INTO reviews (content, is_positive, user_id, film_id) "
             + "VALUES (?, ?, ?, ?)";
-    /*    private static final String UPDATE_QUERY = "UPDATE reviews SET content = ?, is_positive = ?, useful = ?"
-                + "WHERE review_id = ? AND user_id = ? AND film_id = ?";*/
     private static final String UPDATE_QUERY = "UPDATE reviews SET content = ?, is_positive = ? WHERE review_id = ?";
     private static final String FIND_ALL_AND_SORT_BY_USEFUL_QUERY = "SELECT * FROM reviews ORDER BY useful DESC";
     private static final String FIND_ALL_BY_ID_FILM_AND_SORT_BY_USEFUL_QUERY = "SELECT * FROM reviews WHERE film_id = ?"
