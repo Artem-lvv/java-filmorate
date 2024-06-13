@@ -1,28 +1,26 @@
-package ru.yandex.practicum.filmorate.storage.feed;
+package ru.yandex.practicum.filmorate.storage.dataBase.dao;
 
 import lombok.AllArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.feed.Feed;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.mapper.FeedRowMapper;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.mapper.FeedRowMapper;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.sqlQuery.FeedQuery;
 
 import java.util.Collection;
 
 @Component
 @AllArgsConstructor
-public class FeedStorage {
+public class FeedRepository {
     private final FeedRowMapper feedRowMapper;
     private final JdbcTemplate jdbcTemplate;
 
-    public Collection<Feed> getAllFeed(Long userId) {
-        return jdbcTemplate.query("SELECT * FROM feed WHERE user_id = ?", feedRowMapper, userId);
+    public Collection<Feed> getAllFeedByUserId(Long userId) {
+        return jdbcTemplate.query(FeedQuery.GET_ALL_FEED_BY_USER_ID, feedRowMapper, userId);
     }
 
     public void addFeed(Feed feed) {
-        String sqlQuery = """
-                INSERT INTO feed (entity_id, user_id, event_type, operation, timestamp)
-                VALUES (?, ?, ?, ?, ?)
-                """;
+        String sqlQuery = FeedQuery.ADD_FEED;
 
         jdbcTemplate.update(
                 sqlQuery,

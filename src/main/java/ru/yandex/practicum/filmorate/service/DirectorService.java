@@ -7,10 +7,9 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundByIdException;
-import ru.yandex.practicum.filmorate.exception.InternalServerException;
 import ru.yandex.practicum.filmorate.model.film.Director;
 import ru.yandex.practicum.filmorate.model.film.dto.DirectorDto;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.DirectorRepository;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.DirectorRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -71,7 +70,6 @@ public class DirectorService {
         if (rowsUpdated == 0) {
             String message = "failed to update entity data ";
             log.warn(message + updateDirectorDto);
-            throw new InternalServerException(message);
         } else {
             log.info("Update: oldObj {} -> newObj {}", oldDirector, updateDirectorDto);
         }

@@ -15,7 +15,7 @@ import ru.yandex.practicum.filmorate.model.user.dto.CreateUserDto;
 import ru.yandex.practicum.filmorate.model.user.dto.UpdateUserDto;
 import ru.yandex.practicum.filmorate.model.user.dto.UserDto;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.UserRepository;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.UserRepository;
 
 import java.util.List;
 import java.util.Optional;

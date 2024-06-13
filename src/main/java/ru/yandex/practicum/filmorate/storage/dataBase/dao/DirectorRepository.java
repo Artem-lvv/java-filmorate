@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.storage.inDataBase.dao;
+package ru.yandex.practicum.filmorate.storage.dataBase.dao;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
@@ -8,7 +8,8 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.film.Director;
 import ru.yandex.practicum.filmorate.model.film.dto.DirectorDto;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.mapper.DirectorRowMapper;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.mapper.DirectorRowMapper;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.sqlQuery.DirectorQuery;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -24,23 +25,20 @@ public class DirectorRepository {
     private final DirectorRowMapper directorRowMapper;
 
     public List<Director> findAll() {
-        final String sqlQuery = "SELECT * FROM DIRECTOR";
-        return jdbcTemplate.query(sqlQuery, directorRowMapper);
+        return jdbcTemplate.query(DirectorQuery.FIND_ALL, directorRowMapper);
     }
 
     public Optional<Director> findById(Long id) {
-        final String sqlQuery = "SELECT * FROM DIRECTOR WHERE ID = ?";
-        List<Director> directors = jdbcTemplate.query(sqlQuery, directorRowMapper, id);
+        List<Director> directors = jdbcTemplate.query(DirectorQuery.FIND_BY_ID, directorRowMapper, id);
 
         return directors.isEmpty() ? Optional.empty() : Optional.ofNullable(directors.get(0));
     }
 
     public Long create(DirectorDto createDirectorDto) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
-        final String sqlQuery = "INSERT INTO DIRECTOR (name) VALUES (?)";
 
         jdbcTemplate.update(connection -> {
-            PreparedStatement stmt = connection.prepareStatement(sqlQuery, new String[]{"id"});
+            PreparedStatement stmt = connection.prepareStatement(DirectorQuery.CREATE_DIRECTOR, new String[]{"id"});
             stmt.setString(1, createDirectorDto.name());
             return stmt;
         }, keyHolder);
@@ -49,47 +47,34 @@ public class DirectorRepository {
     }
 
     public int update(DirectorDto directorDto) {
-        final String sqlQuery = "UPDATE DIRECTOR SET name = ? WHERE id = ?";
-
-        return jdbcTemplate.update(sqlQuery, directorDto.name(), directorDto.id());
+        return jdbcTemplate.update(DirectorQuery.UPDATE_DIRECTOR, directorDto.name(), directorDto.id());
     }
 
     public void addFilmDirector(Long filmId, Long directorId) {
-        final String sqlQueryCheck = "SELECT * FROM FILM_DIRECTOR WHERE FILM_ID = ? AND DIRECTOR_ID = ?";
-        List<Director> queryCheck = jdbcTemplate.query(sqlQueryCheck, directorRowMapper, filmId, directorId);
+        List<Director> queryCheck = jdbcTemplate.query(DirectorQuery.FIND_RECORD_BY_FILM_ID_AND_DIRECTOR_ID,
+                directorRowMapper, filmId, directorId);
 
         if (queryCheck.isEmpty()) {
-            final String sqlQuery = "INSERT INTO FILM_DIRECTOR (FILM_ID, DIRECTOR_ID) VALUES (?, ?)";
-            jdbcTemplate.update(sqlQuery, filmId, directorId);
+            jdbcTemplate.update(DirectorQuery.ADD_FILM_DIRECTOR, filmId, directorId);
         }
     }
 
     public List<Director> findDirectorsByFilmId(Long filmId) {
-        final String
-                sqlQueryCheck =
-                "SELECT * FROM DIRECTOR" +
-                        " WHERE ID IN (SELECT DIRECTOR_ID FROM FILM_DIRECTOR WHERE FILM_ID = ?) ORDER BY ID";
-        return jdbcTemplate.query(sqlQueryCheck, directorRowMapper, filmId);
+        return jdbcTemplate.query(DirectorQuery.FIND_DIRECTORS_BY_FILM_ID, directorRowMapper, filmId);
     }
 
     public void deleteDirector(Long id) {
-        final String sqlQuery = "DELETE FROM DIRECTOR WHERE ID = ?";
-        jdbcTemplate.update(sqlQuery, id);
-
+        jdbcTemplate.update(DirectorQuery.DELETE_DIRECTOR, id);
     }
 
     public void deleteFilmDirector(Long filmId, Long directorId) {
-        final String sqlQuery = "DELETE FROM FILM_DIRECTOR WHERE FILM_ID = ? AND DIRECTOR_ID = ?";
-        jdbcTemplate.update(sqlQuery, filmId, directorId);
-
+        jdbcTemplate.update(DirectorQuery.DELETE_FILM_DIRECTOR, filmId, directorId);
     }
 
     public void updateFilmDirectors(Long filmId, Set<Long> directorIDs) {
-        String sqlDelete = "DELETE FROM FILM_DIRECTOR WHERE FILM_ID = ?;";
-        jdbcTemplate.update(sqlDelete, filmId);
+        jdbcTemplate.update(DirectorQuery.DELETE_DIRECTOR_BY_FILM_ID, filmId);
 
-        String sqlInsert = "INSERT INTO FILM_DIRECTOR(FILM_ID, DIRECTOR_ID) VALUES(?, ?);";
-        jdbcTemplate.batchUpdate(sqlInsert, new BatchPreparedStatementSetter() {
+        jdbcTemplate.batchUpdate(DirectorQuery.UPDATE_FILM_DIRECTORS, new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement preparedStatement, int i) throws SQLException {
                 preparedStatement.setLong(1, filmId);
@@ -102,5 +87,4 @@ public class DirectorRepository {
             }
         });
     }
-
 }

@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.storage.inDataBase;
+package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,14 +8,14 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundByIdException;
 import ru.yandex.practicum.filmorate.model.film.Genre;
 import ru.yandex.practicum.filmorate.model.film.dto.GenreDto;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.GenreRepository;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.GenreRepository;
 
 import java.util.List;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class GenreDBStorage {
+public class GenreService {
     @Qualifier("mvcConversionService")
     private final ConversionService cs;
     private final GenreRepository genreRepository;

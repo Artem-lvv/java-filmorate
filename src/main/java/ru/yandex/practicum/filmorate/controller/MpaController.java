@@ -6,24 +6,24 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.model.film.dto.MPADto;
-import ru.yandex.practicum.filmorate.storage.inDataBase.MPADBStorage;
+import ru.yandex.practicum.filmorate.service.MpaService;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/mpa")
-public class MotionPictureAssociationController {
-    private final MPADBStorage mpadbStorage;
+public class MpaController {
+    private final MpaService mpaService;
 
     @GetMapping
     public List<MPADto> findAll() {
-        return mpadbStorage.findAll();
+        return mpaService.findAll();
     }
 
     @GetMapping("/{id}")
     public MPADto findById(@PathVariable Long id) {
-        return mpadbStorage.findById(id);
+        return mpaService.findById(id);
     }
 
 }

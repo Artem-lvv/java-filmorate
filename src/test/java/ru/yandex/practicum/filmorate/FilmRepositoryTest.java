@@ -13,10 +13,10 @@ import ru.yandex.practicum.filmorate.model.film.dto.DirectorDto;
 import ru.yandex.practicum.filmorate.model.film.dto.GenreIdDto;
 import ru.yandex.practicum.filmorate.model.film.dto.MPAIdDto;
 import ru.yandex.practicum.filmorate.model.film.dto.UpdateFilmDto;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.FilmRepository;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.UserRepository;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.mapper.FilmRowMapper;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.mapper.UserRowMapper;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.FilmRepository;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.UserRepository;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.mapper.FilmRowMapper;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.mapper.UserRowMapper;
 
 import java.time.LocalDate;
 import java.util.HashSet;

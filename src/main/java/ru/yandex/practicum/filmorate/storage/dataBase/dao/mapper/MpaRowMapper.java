@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.storage.inDataBase.dao.mapper;
+package ru.yandex.practicum.filmorate.storage.dataBase.dao.mapper;
 
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
@@ -8,7 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @Component
-public class MotionPictureAssociationRowMapper implements RowMapper<MPA> {
+public class MpaRowMapper implements RowMapper<MPA> {
     @Override
     public MPA mapRow(ResultSet rs, int rowNum) throws SQLException {
         return MPA.builder()

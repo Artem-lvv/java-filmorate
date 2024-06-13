@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundByIdException;
 import ru.yandex.practicum.filmorate.model.feed.Feed;
@@ -12,9 +13,9 @@ import ru.yandex.practicum.filmorate.model.review.Review;
 import ru.yandex.practicum.filmorate.model.review.dto.CreateReviewDto;
 import ru.yandex.practicum.filmorate.model.review.dto.UpdateReviewDto;
 import ru.yandex.practicum.filmorate.storage.ReviewStorage;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.FilmRepository;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.ReviewRepository;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.UserRepository;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.FilmRepository;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.ReviewRepository;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.UserRepository;
 
 import java.util.Collection;
 
@@ -34,6 +35,7 @@ public class ReviewService implements ReviewStorage {
     private final static int DEFAULT_COUNT = 10;
 
     @Override
+    @Transactional
     public Review create(final CreateReviewDto createReviewDto) {
         userRepository.findById(createReviewDto.userId())
                 .orElseThrow(() -> new EntityNotFoundByIdException("review", createReviewDto.toString()));
@@ -57,6 +59,7 @@ public class ReviewService implements ReviewStorage {
     }
 
     @Override
+    @Transactional
     public Review update(final UpdateReviewDto updateReviewDto) {
         reviewRepository.update(updateReviewDto);
 

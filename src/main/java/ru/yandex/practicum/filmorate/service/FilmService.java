@@ -22,13 +22,18 @@ import ru.yandex.practicum.filmorate.model.film.dto.GenreIdDto;
 import ru.yandex.practicum.filmorate.model.film.dto.UpdateFilmDto;
 import ru.yandex.practicum.filmorate.model.user.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.*;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.DirectorRepository;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.FilmRepository;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.GenreRepository;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.MpaRepository;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.UserRepository;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -45,7 +50,7 @@ public class FilmService implements FilmStorage {
     @Qualifier("mvcConversionService")
     private final ConversionService cs;
     private final GenreRepository genreRepository;
-    private final MPARepository mpaRepository;
+    private final MpaRepository mpaRepository;
     private final FilmRepository filmRepository;
     private final UserRepository userRepository;
     private final DirectorRepository directorRepository;
@@ -61,7 +66,7 @@ public class FilmService implements FilmStorage {
 
         log.info("Create {}", finalFilm);
 
-        if (createFilmDto.genres() != null) {
+        if (Objects.nonNull(createFilmDto.genres())) {
             List<Genre> genreList = createFilmDto.genres()
                     .stream()
                     .map(genreIdDto -> {
@@ -83,7 +88,7 @@ public class FilmService implements FilmStorage {
             finalFilm.setGenres(genreList);
         }
 
-        if (createFilmDto.directors() != null) {
+        if (Objects.nonNull(createFilmDto.directors())) {
             List<Director> directorList = createFilmDto.directors()
                     .stream()
                     .map(directorIdDto -> {
@@ -145,7 +150,7 @@ public class FilmService implements FilmStorage {
 
         Film finalFilm = cs.convert(updateFilmDto, Film.class);
 
-        if (updateFilmDto.genres() != null) {
+        if (Objects.nonNull(updateFilmDto.genres())) {
             Set<Long> genresIDByFilmId = genreRepository.findGenresByFilmId(updateFilmDto.id())
                     .stream()
                     .map(Genre::getId)
@@ -169,7 +174,7 @@ public class FilmService implements FilmStorage {
         List<Genre> genresByFilmId = genreRepository.findGenresByFilmId(updateFilmDto.id());
         finalFilm.setGenres(genresByFilmId);
 
-        if (updateFilmDto.mpa() != null) {
+        if (Objects.nonNull(updateFilmDto.mpa())) {
             Optional<MPA> byIdMpa = mpaRepository.findById(updateFilmDto.mpa().id());
 
             if (byIdMpa.isEmpty()) {
