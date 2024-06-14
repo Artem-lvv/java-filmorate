@@ -4,18 +4,24 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.model.feed.Feed;
+import ru.yandex.practicum.filmorate.model.film.dto.FilmDto;
 import ru.yandex.practicum.filmorate.model.user.dto.CreateUserDto;
 import ru.yandex.practicum.filmorate.model.user.dto.UpdateUserDto;
 import ru.yandex.practicum.filmorate.model.user.dto.UserDto;
+import ru.yandex.practicum.filmorate.service.FeedService;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
-import java.util.*;
+import java.util.Collection;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
 public class UserController {
     private final UserStorage userStorage;
+    private final FilmStorage filmStorage;
+    private final FeedService feedService;
 
     @GetMapping
     public Collection<UserDto> findAll() {
@@ -31,6 +37,11 @@ public class UserController {
     @PutMapping
     public UserDto update(@Valid @RequestBody UpdateUserDto updateUserDto) {
         return userStorage.update(updateUserDto);
+    }
+
+    @GetMapping("/{id}")
+    public UserDto findById(@PathVariable Long id) {
+        return userStorage.findById(id);
     }
 
     @ResponseStatus(HttpStatus.OK)
@@ -55,4 +66,19 @@ public class UserController {
         return userStorage.getCommonFriendsUser(id, otherId);
     }
 
+    @GetMapping("/{id}/recommendations")
+    public Collection<FilmDto> recommendFilms(@PathVariable Long id) {
+        return filmStorage.recommendFilms(id);
+    }
+
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @DeleteMapping("/{userId}")
+    public void deleteUser(@PathVariable long userId) {
+        userStorage.deleteUser(userId);
+    }
+
+    @GetMapping("/{userId}/feed")
+    public Collection<Feed> getAllFeed(@PathVariable Long userId) {
+        return feedService.getAllFeed(userId);
+    }
 }

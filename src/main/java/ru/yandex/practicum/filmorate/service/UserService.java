@@ -9,15 +9,20 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exception.EntityDuplicateException;
 import ru.yandex.practicum.filmorate.exception.EntityNotFoundByIdException;
 import ru.yandex.practicum.filmorate.exception.InternalServerException;
+import ru.yandex.practicum.filmorate.model.feed.Feed;
 import ru.yandex.practicum.filmorate.model.user.User;
 import ru.yandex.practicum.filmorate.model.user.dto.CreateUserDto;
 import ru.yandex.practicum.filmorate.model.user.dto.UpdateUserDto;
 import ru.yandex.practicum.filmorate.model.user.dto.UserDto;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.UserRepository;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.UserRepository;
 
+import java.util.List;
+import java.util.Optional;
 
-import java.util.*;
+import static ru.yandex.practicum.filmorate.model.feed.EventType.FRIEND;
+import static ru.yandex.practicum.filmorate.model.feed.Operation.ADD;
+import static ru.yandex.practicum.filmorate.model.feed.Operation.REMOVE;
 
 @Slf4j
 @Service
@@ -27,6 +32,7 @@ public class UserService implements UserStorage {
     @Qualifier("mvcConversionService")
     private final ConversionService cs;
     private final UserRepository userRepository;
+    private final FeedService feedService;
 
     @Override
     @Transactional
@@ -40,13 +46,16 @@ public class UserService implements UserStorage {
             throw new EntityDuplicateException("email", createUserDto.email());
         }
 
-        User finalUser = cs.convert(createUserDto, User.class);
+        CreateUserDto finalCreateUserDto = new CreateUserDto(
+                createUserDto.id(),
+                createUserDto.email(),
+                createUserDto.login(),
+                (createUserDto.name().isEmpty() ? createUserDto.login() : createUserDto.name()),
+                createUserDto.birthday());
 
-        if (finalUser.getName() == null) {
-            finalUser.setName(finalUser.getLogin());
-        }
+        User finalUser = cs.convert(finalCreateUserDto, User.class);
 
-        Long id = userRepository.create(createUserDto);
+        Long id = userRepository.create(finalCreateUserDto);
         finalUser.setId(id);
 
         log.info("Create {}", finalUser);
@@ -57,7 +66,7 @@ public class UserService implements UserStorage {
     @Override
     @Transactional
     public UserDto update(UpdateUserDto updateUserDto) {
-        Optional<User> oldUser = findById(updateUserDto.id());
+        Optional<User> oldUser = searchUserById(updateUserDto.id());
 
         if (oldUser.isEmpty()) {
             String message = "User not found id " + updateUserDto.id();
@@ -105,9 +114,16 @@ public class UserService implements UserStorage {
                 .toList();
     }
 
-    @Override
-    public Optional<User> findById(Long id) {
+    public Optional<User> searchUserById(Long id) {
         return userRepository.findById(id);
+    }
+
+    @Override
+    public UserDto findById(Long id) {
+        Optional<User> userById = userRepository.findById(id);
+        userById.orElseThrow(() -> new EntityNotFoundByIdException("user", id.toString()));
+
+        return cs.convert(userById.get(), UserDto.class);
     }
 
     @Override
@@ -116,6 +132,12 @@ public class UserService implements UserStorage {
         checkUserById(friendId);
 
         userRepository.addFriend(userId, friendId);
+        feedService.addFeed(Feed.builder()
+                .entityId(friendId)
+                .userId(userId)
+                .eventType(FRIEND)
+                .operation(ADD)
+                .build());
     }
 
     @Override
@@ -135,6 +157,12 @@ public class UserService implements UserStorage {
         checkUserById(friendId);
 
         userRepository.deleteFriendUser(userId, friendId);
+        feedService.addFeed(Feed.builder()
+                .entityId(friendId)
+                .userId(userId)
+                .eventType(FRIEND)
+                .operation(REMOVE)
+                .build());
     }
 
     @Override
@@ -152,5 +180,9 @@ public class UserService implements UserStorage {
         if (userById.isEmpty()) {
             throw new EntityNotFoundByIdException("user", userId.toString());
         }
+    }
+
+    public void deleteUser(Long userId) {
+        userRepository.deleteUser(userId);
     }
 }

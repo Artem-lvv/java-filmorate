@@ -10,8 +10,8 @@ import org.springframework.test.context.jdbc.Sql;
 import ru.yandex.practicum.filmorate.model.user.User;
 import ru.yandex.practicum.filmorate.model.user.dto.CreateUserDto;
 import ru.yandex.practicum.filmorate.model.user.dto.UpdateUserDto;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.UserRepository;
-import ru.yandex.practicum.filmorate.storage.inDataBase.dao.mapper.UserRowMapper;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.UserRepository;
+import ru.yandex.practicum.filmorate.storage.dataBase.dao.mapper.UserRowMapper;
 
 import java.time.LocalDate;
 import java.util.List;

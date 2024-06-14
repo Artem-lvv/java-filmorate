@@ -1,10 +1,12 @@
 -- Вставка данных в таблицу genre
+DELETE FROM genre;
 INSERT INTO genre (name, description)
 VALUES ('Action', 'Action-packed movies with thrilling sequences'),
        ('Comedy', 'Movies that are designed to make the audience laugh'),
        ('Drama', 'Movies with a serious tone and storyline');
 
 -- Вставка данных в таблицу motion_picture_association
+DELETE FROM motion_picture_association;
 INSERT INTO motion_picture_association (name, description)
 VALUES ('G', 'General Audience'),
        ('PG', 'Parental Guidance Suggested'),

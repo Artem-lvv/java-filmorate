@@ -5,6 +5,7 @@ import jakarta.validation.ConstraintValidatorContext;
 import ru.yandex.practicum.filmorate.annotation.MinDate;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 public class MinDateValidator implements ConstraintValidator<MinDate, LocalDate> {
     private LocalDate minimumDate;
@@ -16,6 +17,6 @@ public class MinDateValidator implements ConstraintValidator<MinDate, LocalDate>
 
     @Override
     public boolean isValid(LocalDate localDate, ConstraintValidatorContext constraintValidatorContext) {
-        return localDate != null && localDate.isAfter(minimumDate);
+        return Objects.nonNull(localDate) && localDate.isAfter(minimumDate);
     }
 }
